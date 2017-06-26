@@ -1,0 +1,30 @@
+{
+  "name": "soykaf",
+  "version": "0.0.0",
+  "description": "Character Management App for Shadowrun 5e",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/rmehlinger/soykaf.git"
+  },
+  "author": "Richard Mehlinger",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/rmehlinger/soykaf/issues"
+  },
+  "homepage": "https://github.com/rmehlinger/soykaf#readme",
+  "dependencies": {
+    "bobtail": "^1.8.1",
+    "bobtail-storage": "^1.1.0",
+    "bootstrap": "^3.3.7",
+    "jquery": "^3.2.1",
+    "underscore": "^1.8.3",
+    "underscore.string": "^3.3.4"
+  },
+  "devDependencies": {
+    "browserify": "^14.4.0"
+  }
+}

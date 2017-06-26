@@ -4,7 +4,14 @@
   "description": "Character Management App for Shadowrun 5e",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "npm run build-assets && node server.js",
+    "start-dev": "npm run watch & npm run live-reload & nodemon server.js",
+    "watch": "npm run watch-js & npm run watch-css",
+    "watch-js": "watchify src/main.coffee --transform coffeeify --outfile static/scripts/bundle.js --verbose",
+    "watch-css": "npm run build-css && npm run build-css -- -w",
+    "build-css": "node-sass -r --output-style compressed css/soykaf.sass -o static/css",
+    "copy-css": "copyfiles css static/css",
+    "live-reload": "live-reload static/scripts/bundle.js --port 9092"
   },
   "repository": {
     "type": "git",
@@ -25,6 +32,14 @@
     "underscore.string": "^3.3.4"
   },
   "devDependencies": {
-    "browserify": "^14.4.0"
+    "browserify": "^14.4.0",
+    "browserify-coffeelint": "^1.2.0",
+    "coffeeify": "^2.0.1",
+    "copy-files": "^0.1.0",
+    "express": "~4.9.8",
+    "live-reload": "^1.1.0",
+    "node-sass": "^4.5.3",
+    "nodemon": "~1.8.1",
+    "watchify": "^3.6.1"
   }
 }

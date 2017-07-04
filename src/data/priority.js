@@ -1,48 +1,44 @@
-/**
- * Created by Richard on 6/25/2017.
- */
-let {casterTypes, raceNames, attributes} = require('./character.js');
+let {MAGIC, RESONANCE, casterTypes, metatypeNames} = require('./character.js');
 let {MYSTIC_ADEPT, ADEPT, TECHNOMANCER, MAGICIAN, ASPECTED_MAGICIAN} = casterTypes;
-let {HUMAN, ELF, DWARF, ORK, TROLL} = raceNames;
-let {MAGIC, RESONANCE} = attributes;
+let {HUMAN, ELF, DWARF, ORK, TROLL} = metatypeNames;
 
-exports= {
+module.exports = {
   metatype: {
     A: [
-      {race: HUMAN, special: 9},
-      {race: ELF, special: 8},
-      {race: DWARF, special: 7},
-      {race: ORK, special: 7},
-      {race: TROLL, special: 5}
+      {metatype: HUMAN, special: 9},
+      {metatype: ELF, special: 8},
+      {metatype: DWARF, special: 7},
+      {metatype: ORK, special: 7},
+      {metatype: TROLL, special: 5}
     ],
     B: [
-      {race: HUMAN, special: 7},
-      {race: ELF, special: 6},
-      {race: DWARF, special: 4},
-      {race: ORK, special: 4},
-      {race: TROLL, special: 0}
+      {metatype: HUMAN, special: 7},
+      {metatype: ELF, special: 6},
+      {metatype: DWARF, special: 4},
+      {metatype: ORK, special: 4},
+      {metatype: TROLL, special: 0}
     ],
     C: [
-      {race: HUMAN, special: 5},
-      {race: ELF, special: 4},
-      {race: DWARF, special: 1},
-      {race: ORK, special: 0}
+      {metatype: HUMAN, special: 5},
+      {metatype: ELF, special: 4},
+      {metatype: DWARF, special: 1},
+      {metatype: ORK, special: 0}
     ],
     D: [
-      {race: HUMAN, special: 3},
-      {race: ELF, special: 0}
+      {metatype: HUMAN, special: 3},
+      {metatype: ELF, special: 0}
     ],
-    E: [{race: HUMAN, special: 1}]
+    E: [{metatype: HUMAN, special: 1}]
   },
-  attributes: {A: [24], B: [20], C: [16], D: [14], E: [12]},
+  attributes: {A: 24, B: 20, C: 16, D: 14, E: 12},
   skills: {
-    A: [{skills: 46, groups: 10}],
-    B: [{skills: 36, groups: 5}],
-    C: [{skills: 28, groups: 2}],
-    D: [{skills: 22, groups: 0}],
-    E: [{skills: 18, groups: 0}]
+    A: {skills: 46, groups: 10},
+    B: {skills: 36, groups: 5},
+    C: {skills: 28, groups: 2},
+    D: {skills: 22, groups: 0},
+    E: {skills: 18, groups: 0}
   },
-  resources: {A: [450000], B: [275000], C: [140000], D: [50000], E: [6000]},
+  resources: {A: 450000, B: 275000, C: 140000, D: 50000, E: 6000},
   magic: {
     A: [
       {
@@ -140,6 +136,7 @@ exports= {
       {
         type: ASPECTED_MAGICIAN,
         skills: {
+          quantity: 1,
           type: 'Magical',
           rating: 4,
           group: true
@@ -190,6 +187,7 @@ exports= {
       {
         type: ASPECTED_MAGICIAN,
         skills: {
+          quantity: 1,
           rating: 3,
           type: "Magical",
           group: true
@@ -216,6 +214,6 @@ exports= {
         }
       }
     ],
-    E: []
+    E: [{type: "none"}]
   }
 };

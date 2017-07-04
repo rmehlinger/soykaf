@@ -1,4 +1,4 @@
-exports.skills = {
+module.exports = {
   active: [
     {name: "archery", attribute: "agility", type: "combat"},
     {name: "automatics", attribute: "agility", group: "firearms", type: "combat"},

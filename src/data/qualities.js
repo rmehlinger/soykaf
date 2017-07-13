@@ -81,7 +81,6 @@ module.exports = {
     {
       "name": "Home Ground",
       "karma": 10,
-      "multiple": 6,
       "effect": {
         "bonus": 2,
         "optional": true
@@ -207,12 +206,12 @@ module.exports = {
       "name": "Spirit Affinity",
       "karma": 7,
       "select": [
-        "air",
-        "earth",
-        "water",
-        "fire",
-        "beasts",
-        "man"
+        {name: "air"},
+        {name: "earth"},
+        {name: "water"},
+        {name: "fire"},
+        {name: "beasts"},
+        {name: "man"}
       ],
       "effect": {
         "bonus": 1,
@@ -550,12 +549,12 @@ module.exports = {
       "name": "Spirit Bane",
       "karma": 7,
       "select": [
-        "air",
-        "earth",
-        "water",
-        "fire",
-        "beasts",
-        "man"
+        {name: "air"},
+        {name: "earth"},
+        {name: "water"},
+        {name: "fire"},
+        {name: "beasts"},
+        {name: "man"}
       ]
     },
     {

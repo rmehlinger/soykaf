@@ -30,7 +30,7 @@ module.exports = {
     ],
     E: [{metatype: HUMAN, special: 1}]
   },
-  attributes: {A: [24], B: [20], C: [16], D: [14], E: [12]},
+  attributes: {A: [{points: 24}], B: [{points: 20}], C: [{points: 16}], D: [{points: 14}], E: [{points: 12}]},
   skills: {
     A: [{skills: 46, groups: 10}],
     B: [{skills: 36, groups: 5}],
@@ -38,7 +38,7 @@ module.exports = {
     D: [{skills: 22, groups: 0}],
     E: [{skills: 18, groups: 0}]
   },
-  resources: {A: [450000], B: [275000], C: [140000], D: [50000], E: [6000]},
+  resources: {A: [{nuyen: 450000}], B: [{nuyen: 275000}], C: [{nuyen: 140000}], D: [{nuyen: 50000}], E: [{nuyen: 6000}]},
   magic: {
     A: [
       {

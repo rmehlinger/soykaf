@@ -9,36 +9,40 @@ R = rxt.tags
 priority = require './data/priority.js'
 {groups, active, knowledge} = require './data/skills.js'
 util = require './util.coffee'
+window.rxStorage = require 'bobtail-storage'
+stringify = require 'json-stable-stringify'
 
 {attributeNames, metatypeStats} = require './data/character.js'
 qualities = require './data/qualities.js'
 deepGet = require 'lodash.get'
 inputs = require './inputs.coffee'
 
-x = {}
+curFormData = {}
 get = (nonReact) ->
   if nonReact
-    val = rx.snap => deepGet x.curFormData, nonReact
+    val = rx.snap => deepGet curFormData, nonReact
     if not val?
-      return deepGet x.curFormData, nonReact
+      return deepGet curFormData, nonReact
     else val
-  else x.curFormData
+  else rx.snap => curFormData
 
 
 isSelected = (obj, field, priorityVal) -> obj.priority?[field]?.priorityVal == priorityVal
 
 main = (initial) ->
   $priorityRadio = (field, priorityVal, choice) ->
+    value = stringify(_.extend {priorityVal}, choice)
+
     return R.input.checkbox {
       name: "priority[#{field}]:object"
       value: JSON.stringify(_.extend {priorityVal}, choice)
-      class: [field, "priority-cell"]
       field
       priorityVal
-      checked: if not initial then false else isSelected initial, field, priorityVal
+      checked: do ->
+        return value == stringify initial?.priority?[field]
       change: (event) -> rx.transaction ->
         if event.target.checked
-          $radios = $("input.priority[type=checkbox][priorityVal=#{priorityVal}]").add $("input[type=checkbox][field=#{field}]")
+          $radios = $("input[type=checkbox][priorityVal=#{priorityVal}]").add $("input[field=#{field}]")
           $radios.each (i, $radio) ->
             if $radio != event.target
               $($radio).prop 'checked', false
@@ -60,7 +64,7 @@ main = (initial) ->
         R.th {class: 'resources'}, bind -> ["Resources", charPri 'resources']
       ]
     R.tbody ["A", "B", "C", "D", "E"].map (priorityVal) ->
-      tdFn = (field, fmtfn=_.identity) ->
+      tdFn = (field, fmtfn) ->
         choices = priority[field][priorityVal]
         R.td {class: bind -> if isSelected get(), field, priorityVal then 'info'}, [
           choices.map (choice) -> R.div {class: 'checkbox'}, R.label [
@@ -76,7 +80,7 @@ main = (initial) ->
             if field then " (#{field})" else ""
         ]
         tdFn 'metatype', ({metatype, special}) -> "#{metatype} (#{special})"
-        tdFn 'attributes'
+        tdFn 'attributes', _.property 'points'
         tdFn 'magic', ({type, attribute, skills, spells}) ->
           if type then return [
             type
@@ -86,14 +90,17 @@ main = (initial) ->
           ]
           else "(none)"
         tdFn 'skills', ({skills, groups}) -> "#{skills}/#{groups}"
-        tdFn 'resources', (nuyen) -> "#{nuyen}¥"
+        tdFn 'resources', ({nuyen}) -> "#{nuyen}¥"
       ]
     ]
 
   $qualityPicker = (qualType) ->
-    rows = rx.array initial?.qualities?[qualType] ? [null]
-    selected = rx.array.from bind -> get('qualities')?[qualType] ? []
+    initQuals = initial?.qualities?[qualType]
+    rows = rx.array _.map initQuals?.skills, (skill, i) -> _.extend {choice: initQuals?.choice?[i]}, skill
+    selected = rx.array.from bind -> Array.from get("qualities.#{qualType}.skills") ? []
     selectedNames = bind -> _.pluck selected.all(), 'name'
+
+    nameStem = "qualities[#{qualType}]"
 
     return [
       R.h3 rx.flatten [
@@ -105,17 +112,11 @@ main = (initial) ->
         ]
       ]
       rows.indexed().map (val, iCell) ->
-        selectedQuality = bind -> selected.at iCell.get()
-        selectedName = bind -> selectedQuality.get()?.name
-        choices = rx.array.from bind ->
-          maybeChoices = selectedQuality.get()?.select
-          if _.isArray maybeChoices then maybeChoices.map JSON.stringify else []
-        nameStem = "qualities[#{qualType}][]"
-
-        $select = inputs.select {class: 'form-control input-sm', name: "#{nameStem}:object"},
-          rx.flatten [
-            qualities[qualType].map (qual) ->
-              disable = bind -> qual.name in selectedNames.get() and qual.name != selectedName.get()
+        otherNames = bind -> selectedNames.get().filter (e, i) -> i != iCell.get()
+        $select = inputs.select {class: 'form-control input-sm', name: "#{nameStem}[skills][]:object"},
+          rx.flatten bind -> [
+            qualities[qualType].map (qual) -> bind ->
+              disable = bind -> qual.name in otherNames.get()
               return [
                 if qual.multiple then [1..qual.multiple].map (mult) ->
                   inputs.option {
@@ -133,6 +134,26 @@ main = (initial) ->
                   }, "#{qual.name} (#{qual.karma})"
               ]
         ]
+
+        subchoices = bind ->
+          qual = JSON.parse($select.rx('val').get())
+          sub = qual?.select
+          if sub == 'skill' then active.map ({name, group}) -> {
+            value: name, description: _str.capitalize(name) + if group then " (#{group})" else ""
+          }
+          else if sub == 'skill group' then groups.map (group) -> {
+            value: group
+            description: _str.capitalize group
+          }
+          else if qual.name == 'Exceptional Attribute'
+            attributeNames.concat(['magic', 'resonance']).map (attr) -> {
+              value: attr
+              description: _str.capitalize attr
+            }
+          else if _.isArray sub then sub.map (value) -> {value, description: _str.capitalize value}
+          else if sub == 'playerDescribed' then 'text'
+          else return null
+
         R.p {class: 'row'}, [
           R.div {class: 'col-xs-7'}, R.div {class: 'input-group input-group-sm'}, [
             R.span {class: 'input-group-btn'}, R.button {
@@ -142,32 +163,19 @@ main = (initial) ->
             $select
           ]
           R.div {class: 'col-xs-5'}, bind ->
-            if choices.length()
-              inputs.select {
-                name: "#{nameStem}[choice]:string"
-                class: 'form-control input-sm'
-              }, choices.map (choice) ->
-                choice = JSON.parse choice  # work around :(
-                inputs.option {value: choice.name, title: choice.description, selected: val?.choice == choice.name},
-                  choice.name
-            else if selectedQuality.get()?.select == 'skill'
-              inputs.select {name: "#{nameStem}[choice]:string", class: 'form-control input-sm'}, active.map ({name, group}) ->
-                inputs.option {value: name, selected: val?.choice == name}, [
-                  _str.capitalize name
-                  if group then " (#{group})" else ""
-                ]
-            else if selectedQuality.get()?.select == 'skill group'
-              inputs.select {name: "#{nameStem}[choice]:string", class: 'form-control input-sm'}, groups.map (group) ->
-                inputs.option {value: group, selected: val?.choice == group}, _str.capitalize group
-            else if selectedName.get() == 'Exceptional Attribute'
-              inputs.select {
-                name: "#{nameStem}[choice]:string"
-                value: val?.choice ? ''
-                class: 'form-control input-sm'
-              }, attributeNames.concat(['magic', 'resonance']).map (attr) ->
-                inputs.option {value: attr}, _str.capitalize attr
-            else if selectedQuality.get()?.playerDescribed
-              R.input.text {placeholder: 'description', class: 'form-control input-sm', name: "#{nameStem}[description]:string"}
+            opts = {
+              name: "#{nameStem}[choice][]:string"
+              class: 'form-control input-sm'
+            }
+            $text = R.input.text opts
+            $subSelect = inputs.select opts, subchoices.get()?.map? ({value, description}) -> inputs.option {
+              value
+              selected: value == val?.choice
+            }, description
+            bind ->
+              if subchoices.get() == 'text' then $text
+              else if _.isArray subchoices.get() then $subSelect
+              else ''
         ]
       R.button {class: 'btn btn-primary pull-right', type: 'button', click: -> rows.push null}, "Add Quality"
     ]
@@ -214,35 +222,36 @@ main = (initial) ->
       else 6
 
     min = bind -> charMagic.get()?.value
+    $disabled = R.input.number {
+      class: 'form-control input-sm'
+      name: "specialAttributes[#{subfield.toLowerCase()}]:number"
+      value: 0
+      readonly: true
+    }
+    $input = R.input.number {
+      class: 'form-control'
+      name: "specialAttributes[#{subfield}]:number"
+      value: initial?.specialAttributes?[subfield] ? 1
+      min: bind -> min.get()
+      max: bind -> max.get()
+    }
+
     return R.div {class: 'form-group attr-input-group'}, [
       R.label subfield
-      R.span {class: 'input-group-sm input-group'}, rx.flatten [
-        bind ->
-          if subfield == charMagic.get()?.name
-            $input = R.input.number {
-              class: 'form-control'
-              name: "specialAttributes[#{subfield}]:number"
-              value: initial?.specialAttributes?[subfield] ? 1
-              min: bind -> min.get()
-              max: bind -> max.get()
-            }
+      R.span {class: 'input-group-sm input-group'}, bind -> [
+        if subfield == charMagic.get()?.name
+          $input
+          rx.autoSub min.onSet, ([o, n]) ->
+            if n > parseInt $input.val()
+              $input.val n
+              $input.change()
+          rx.autoSub max.onSet, ([o, n]) ->
+            if n < parseInt $input.val()
+              $input.val n
+              $input.change()
+          $input
 
-            rx.autoSub min.onSet, ([o, n]) ->
-              if n > parseInt $input.val()
-                $input.val n
-                $input.change()
-            rx.autoSub max.onSet, ([o, n]) ->
-              if n < parseInt $input.val()
-                $input.val n
-                $input.change()
-            $input
-
-          else R.input.number {
-            class: 'form-control input-sm'
-            name: "specialAttributes[#{subfield.toLowerCase()}]:number"
-            value: 0
-            readonly: true
-          }
+        else $disabled
         R.span {class: 'input-group-addon'}, bind -> "/#{max.get()}"
       ]
     ]
@@ -250,7 +259,7 @@ main = (initial) ->
   $skillWidget = ({name, group}, groupScore=bind -> null) ->
     $input = R.input.number {
       name: "skills[#{name}][level]:number"
-      value: initial?.skills[name].level ? 0
+      value: initial?.skills?[name].level ? 0
       class: 'form-control input-sm'
       min: 0
       max: 6
@@ -258,13 +267,13 @@ main = (initial) ->
     }
     $specialty = R.input.text {
       name: "skills[#{name}][specialty][]:string"
-      value: initial?.skills[name].specialty[0] ? ''
+      value: initial?.skills?[name]?.specialty?[0] ? ''
       class: 'form-control input-sm'
       disabled: bind -> not not groupScore.get()
       placeholder: 'specialty'
     }
     rx.autoSub groupScore.onSet, rx.skipFirst ([o, n]) ->
-      if n? then $input.val(n).change()
+      if o? and n? then $input.val(n).change()
       if n then $specialty.val('').change()
     R.div {class: 'form-group'}, [
       R.div {class: 'col-xs-5 text-right'}, R.label {class: 'control-label'}, name
@@ -274,7 +283,7 @@ main = (initial) ->
     ]
 
   $mkKnowledgeGrp = (category) ->
-    rows = rx.array([{}])
+    rows = rx.array(initial?.knowledge?[category] ? [])
     R.div rx.flatten [
       R.h3 category
       rows.indexed().map (v, iCell) -> $knowlSkillRow category, iCell.raw(), (i) -> rows.removeAt i
@@ -286,13 +295,13 @@ main = (initial) ->
     ]
 
   $knowlSkillRow = (category, i, rmFn) ->
-    initRoot = initial?.knowledge[category][i] ? {}
+    initRoot = initial?.knowledge?[category]?[i] ? {}
     return R.div {class: 'form-group'}, [
       R.div {class: 'col-xs-6'}, R.div {class: 'input-group input-group-sm'}, [
         R.span {class: 'input-group-btn'}, R.button {
           class: 'btn btn-danger btn-sm'
           type: 'button'
-          click: rmFn i
+          click: -> rmFn i
         }, R.span {class: 'glyphicon glyphicon-remove'}
         R.input.text {
           name: "knowledge[#{category}][][name]:string"
@@ -301,10 +310,6 @@ main = (initial) ->
           placeholder: "subject"
         }
       ]
-      R.input.hidden {
-        name: "knowledge[][category]:string"
-        value: category
-      }
       R.div {class: 'col-xs-2'}, R.input.number {
         name: "knowledge[#{category}][][level]:number",
         value: initRoot?.level ? 0
@@ -321,12 +326,14 @@ main = (initial) ->
     ]
 
   {$form} = bobtailForm (cell) ->
-    curFormData = x.curFormData = cell.data
-    magicType = bind -> get('startingMagic.attribute', 'name')
+    curFormData = cell.data
+    magicType = bind -> get('startingMagic.attribute')?.name
     return R.form {
       class: 'form'
       submit: ->
-    }, bind -> [
+        rxStorage.local.setItem 'character', $(@).serializeJSON()
+        false
+    }, rx.flatten bind -> [
       R.h2 [
         "Priority Table"
       ]
@@ -334,9 +341,9 @@ main = (initial) ->
       R.h2 rx.flatten [
         "Attributes "
         R.strong bind ->
-          base = util.sum attributeNames.map (attr) -> metatypeStats[curFormData.metatype]?.attributes?[attr]?.base ? 1
+          base = util.sum attributeNames.map (attr) -> metatypeStats[get('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
           spent = util.sum(_.values curFormData.attributes) - base
-          allowed = priority.attributes[get('priority')?.attributes]
+          allowed = get()?.priority?.attributes?.points
           R.span {class: bind -> if spent > allowed then "red" else ""}, [
             "("
             spent
@@ -361,9 +368,9 @@ main = (initial) ->
         "Special Attributes "
         R.strong bind ->
           base = 1 + (get('startingMagic.attribute')?.value ? 0)
-          if curFormData.metatype == 'human' then base += 1
-          spent = -base + util.sum _.values curFormData.specialAttributes
-          allowed = curFormData.specialPoints
+          if get('priority.metatype')?.metatype == 'human' then base += 1
+          spent = -base + util.sum _.values get().specialAttributes
+          allowed = get('priority.metatype')?.special
           R.span {class: bind -> if spent > allowed then "red" else ""}, [
             "("
             spent
@@ -442,7 +449,8 @@ main = (initial) ->
         "Knowledge Skills"
         bind ->
           cap = ((get('attributes')?.logic ? 0) + (get('attributes')?.intuition ? 0)) * 2
-          return " (/#{cap})"
+          total = util.sum _.chain(get().knowledge).values().flatten().pluck('level').value()
+          return " (#{total} / #{cap})"
       ]
       R.div {class: 'form-horizontal'}, [
         R.div {class: 'row'}, [
@@ -457,7 +465,7 @@ main = (initial) ->
           R.div {class: 'col-md-6'}, $mkKnowledgeGrp 'language'
           R.div {class: 'col-md-6'}, rx.flatten [
             R.h3 "native language(s)"
-            bind -> [0..if _.findWhere(get('qualities')?.positive, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
+            bind -> [0..if _.findWhere(get()?.qualities, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
               R.div {class: 'col-xs-4'}, R.input.text {
                 placeholder: "native language"
                 name: "nativeLang[][name]:string"
@@ -473,11 +481,12 @@ main = (initial) ->
         ]
       ]
       R.h2 bind ->
-        pos = bind -> util.sum _.pluck get().qualities?.positive, 'karma'
-        neg = bind -> util.sum _.pluck get().qualities?.negative, 'karma'
+        pos = bind -> util.sum _.pluck _.where(get()?.qualities, {qualType: 'positive'}), 'karma'
+        neg = bind -> util.sum _.pluck _.where(get()?.qualities, {qualType: 'negative'}), 'karma'
 
-        "Spend Karma: (0/#{25 + neg.get() - pos.get()})"
+        R.p "Spend Karma: (0/#{25 + neg.get() - pos.get()})"
+      R.div {class: 'form-group'}, R.div {class: 'col-xs-12 col-md-offset-3 col-md-6'}, R.p R.button {type: 'Submit', class: 'btn btn-success btn-block'}, R.h4 "Save Character"
     ]
   return $form
 
-$('body').append R.div {class: 'container'}, R.div {class: "row"}, R.div {class: 'col-xs-12'}, main()
+$('body').append R.div {class: 'container'}, R.div {class: "row"}, R.div {class: 'col-xs-12'}, main rxStorage.local.getItem 'character'

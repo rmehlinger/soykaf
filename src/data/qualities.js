@@ -9,13 +9,13 @@ module.exports = {
     {"name": "Analytical Mind", "karma": 5, "effect": { "optional": true, "bonus": 2, "test": "Logic"}},
     {"name": "Aptitude", "karma": 14, "select": "skill", "effect": {"limit": 1}},
     {"name": "Astral Chameleon", "karma": 10},
-    {"name": "Bilingual", "karma": 5, "select": "skill:language"},
+    {"name": "Bilingual", "karma": 5},
     {"name": "Blandness", "karma": 8},
     {"name": "Catlike", "karma": 7, "effect": {"skill": ["stealth"], "bonus": 2}},
     {
       "name": "Codeslinger",
       "karma": 10,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       // "select": "matrix action", // eventually
       "effect": {
         "bonus": 2
@@ -87,30 +87,18 @@ module.exports = {
         "optional": true
       },
       "select": [
-        {
-          "name": "Astral Acclimation",
-          "description": "ignore 2 points background count"
-        },
-        {
-          "name": "You Know a Guy",
-          "description": "+2 street cred for Negotiation with people from home ground"
-        },
-        {
-          "name": "Digital Turf",
-          "description": "+2 bonus to Matrix tests while in Home Ground Host"
-        },
-        {
-          "name": "The Transporter",
-          "description": "+2 dice pool to evasion tests on Home Ground"
-        },
-        {
-          "name": "On the Lam",
-          "description": "+2 dice pool to intuition + street knowledge skill to find a bolthole"
-        },
-        {
-          "name": "Street Politics",
-          "description": "+2 dice pool for knowledge tests relating to gangs or their operations"
-        }
+        "Astral Acclimation",
+          // "description": "ignore 2 points background count"
+        "You Know a Guy",
+          // "description": "+2 street cred for Negotiation with people from home ground"
+        "Digital Turf",
+          // "description": "+2 bonus to Matrix tests while in Home Ground Host"
+        "The Transporter",
+          // "description": "+2 dice pool to evasion tests on Home Ground"
+        "On the Lam",
+          // "description": "+2 dice pool to intuition + street knowledge skill to find a bolthole"
+        "Street Politics",
+          // "description": "+2 dice pool for knowledge tests relating to gangs or their operations"
       ]
     },
     {
@@ -144,7 +132,7 @@ module.exports = {
     {
       "name": "Mentor Spirit",
       "karma": 5,
-      "playerDescribed": true
+      "select": "playerDescribed"
     },
     {
       "name": "Natural Athlete",
@@ -164,12 +152,12 @@ module.exports = {
     {
       "name": "Natural Immunity, natural",
       "karma": 4,
-      "playerDescribed": true
+      "select": "playerDescribed"
     },
     {
       "name": "Natural Immunity, synthetic",
       "karma": 4,
-      "playerDescribed": true
+      "select": "playerDescribed"
     },
     {
       "name": "Photographic Memory",
@@ -206,14 +194,7 @@ module.exports = {
     {
       "name": "Spirit Affinity",
       "karma": 7,
-      "select": [
-        {name: "air"},
-        {name: "earth"},
-        {name: "water"},
-        {name: "fire"},
-        {name: "beasts"},
-        {name: "man"}
-      ],
+      "select": ["air", "earth", "water", "fire", "beasts", "man"],
       "effect": {
         "bonus": 1,
         "test": "binding"
@@ -372,7 +353,7 @@ module.exports = {
     {
       "name": "Code of Honor",
       "karma": 15,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {},
       "description": "Cannot kill member of protected group."
     },
@@ -380,7 +361,7 @@ module.exports = {
       "name": "Codeblock",
       "karma": 10,
       // "select": "matrix action", // eventually
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2
       }
@@ -450,7 +431,7 @@ module.exports = {
     {
       "name": "Prejudiced, Specific, Biased",
       "karma": 3,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -460,7 +441,7 @@ module.exports = {
     {
       "name": "Prejudiced, Common, Biased",
       "karma": 5,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -470,7 +451,7 @@ module.exports = {
     {
       "name": "Prejudiced, Specific, Outspoken",
       "karma": 5,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -480,7 +461,7 @@ module.exports = {
     {
       "name": "Prejudiced, Common, Outspoken",
       "karma": 7,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -490,7 +471,7 @@ module.exports = {
     {
       "name": "Prejudiced, Specific, Radical",
       "karma": 8,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -500,7 +481,7 @@ module.exports = {
     {
       "name": "Prejudiced, Common, Radical",
       "karma": 10,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -510,7 +491,7 @@ module.exports = {
     {
       "name": "Scorched",
       "karma": 10,
-      "playerDescribed": true
+      "select": "playerDescribed"
     },
     {
       "name": "Sensitive System",
@@ -543,21 +524,14 @@ module.exports = {
     {
       "name": "Social Stress",
       "karma": 8,
-      "playerDescribed": true,
+      "select": "playerDescribed",
       "effect": {},
       "description": "One fewer 1 required to glitch if triggered."
     },
     {
       "name": "Spirit Bane",
       "karma": 7,
-      "select": [
-        {name: "air"},
-        {name: "earth"},
-        {name: "water"},
-        {name: "fire"},
-        {name: "beasts"},
-        {name: "man"}
-      ]
+      "select": ["air", "earth", "water", "fire", "beasts", "man"]
     },
     {
       "name": "Uncouth",

@@ -43,8 +43,7 @@ exports.option = option = (args...) ->
       # This also takes care of the case where the option's selected attribute is a reactive
       # cell; when the cell content changes, reactive-coffee will call $.prop() to set the new value.
       $parent = $option.closest("select")
-      if $parent
-        $parent.rx("val").set $parent.val()
+      rx.hideMutationWarnings -> if $parent then $parent.rx("val").set $parent.val()
     return res
   return $option
 
@@ -69,12 +68,11 @@ boundSelect = (opts, children) ->
       children = []
   {value} = opts
   childrenCell = rx.array.from children
-  if value?
-    valueCell = rx.cell.from value
+  if value? then valueCell = rx.cell.from value
 
   $select = swapVal(R.select opts, childrenCell)
 
-  rx.autoSub childrenCell.onChange, ([i, a, r]) ->
+  rx.autoSub childrenCell.onChange, ([i, a, r]) -> rx.hideMutationWarnings ->
     # If the children options change, the browser will by default select something from the new
     # children options, but no change event is fired, so the $select.rx("val") can be out of sync.
     # We forcibly update $select.rx("val") here.
@@ -88,7 +86,7 @@ boundSelect = (opts, children) ->
   if valueCell?
     # If there's a valueCell specified, then whenever the value changes, update $select.val()
     # (which will update $select.rx("val") for us).
-    rx.autoSub valueCell.onSet, ([o, n]) -> if n? then $select.val n
+    rx.autoSub valueCell.onSet, ([o, n]) -> rx.hideMutationWarnings -> if n? then $select.val n
 
   return $select
 

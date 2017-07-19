@@ -7,11 +7,14 @@
     "start": "npm run build-assets && node server.js",
     "start-dev": "npm run watch & npm run live-reload & nodemon server.js",
     "watch": "npm run watch-js & npm run watch-css",
-    "watch-js": "watchify src/main.coffee --debug --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose",
-    "watch-css": "npm run build-css && npm run build-css -- -w",
+    "watch-js": "watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose --debug",
+    "build-js": "browserify src/main.coffee --transform coffeeify --extensions=\".coffee\" --outfile static/scripts/bundle.js",
+    "watch-css": "nodemon -w css -e sass -x 'npm run build-css'",
     "build-css": "node-sass -r --output-style compressed css/soykaf.sass -o static/css",
-    "copy-css": "cp -ra css static/css",
-    "live-reload": "live-reload static/scripts/bundle.js --port 9092"
+    "build-assets": "npm run build-js && npm run build-css",
+    "copy-css": "cp -ra css/*.css static/css",
+    "live-reload": "live-reload static/**/* --port 9092",
+    "heroku": "npm prune && npm i && cp -ra . \"/mnt/g/Dropbox (Personal)/Apps/Heroku/soykaf\""
   },
   "repository": {
     "type": "git",
@@ -24,15 +27,14 @@
   },
   "homepage": "https://github.com/rmehlinger/soykaf#readme",
   "dependencies": {
-    "bobtail": "^2.0.0",
+    "bobtail": "^2.0.1",
     "bobtail-form": ">=0.2.0",
     "bobtail-storage": "^1.1.0",
     "bootstrap": "^3.3.7",
-    "deep-diff": "^0.3.8",
     "jquery": "^3.2.1",
     "jquery-serializejson": "^2.8.1",
-    "jsondiffpatch": "^0.2.4",
-    "mutation-summary": "^0.1.1",
+    "json-stable-stringify": "^1.0.1",
+    "lodash.get": "^4.4.2",
     "underscore": "^1.8.3",
     "underscore.string": "^3.3.4"
   },
@@ -40,10 +42,10 @@
     "browserify": "^14.4.0",
     "browserify-coffeelint": "^1.2.0",
     "coffeeify": "^2.0.1",
-    "express": "~4.9.8",
+    "express": "~4.15.3",
     "live-reload": "^1.1.0",
     "node-sass": "^4.5.3",
-    "nodemon": "~1.8.1",
+    "nodemon": "~1.11.0",
     "watchify": "^3.9.0"
   }
 }

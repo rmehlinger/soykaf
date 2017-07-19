@@ -11,11 +11,11 @@ let attributeNames = [BODY, AGI, REA, STR, WIL, LOG, INT, CHA];
 
 module.exports = {
   casterTypes: {
-    MYSTIC_ADEPT: 'mystic_adept',
+    MYSTIC_ADEPT: 'mystic adept',
     ADEPT: 'adept',
     TECHNOMANCER: 'technomancer',
     MAGICIAN: 'magician',
-    ASPECTED_MAGICIAN: 'aspected_magician'
+    ASPECTED_MAGICIAN: 'aspected magician'
   },
   metatypeNames: {HUMAN, ELF, DWARF, ORK, TROLL},
   attributeNames, EDGE, MAGIC, RESONANCE,

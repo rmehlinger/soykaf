@@ -15,7 +15,8 @@ module.exports = {
     {
       "name": "Codeslinger",
       "karma": 10,
-      "select": "matrix action",
+      "playerDescribed": true,
+      // "select": "matrix action", // eventually
       "effect": {
         "bonus": 2
       }
@@ -378,7 +379,8 @@ module.exports = {
     {
       "name": "Codeblock",
       "karma": 10,
-      "select": "matrix action",
+      // "select": "matrix action", // eventually
+      "playerDescribed": true,
       "effect": {
         "bonus": -2
       }

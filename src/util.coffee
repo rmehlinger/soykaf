@@ -1,10 +1,11 @@
 exports = module.exports = {}
 
-exports.logReturn = window.logReturn = (arg) ->
-  console.log arg
+exports.logReturn = window.logReturn = (arg, rest...) ->
+  console.log arg, rest...
   arg
 
-exports.sum = sum = (list) -> (list ? []).reduce ((memo, sum) -> memo + sum), 0
+exports.sum = sum = (list) ->
+  (list ? []).reduce ((memo, sum) -> memo + sum), 0
 exports.geoSum = geoSum = (n) -> (n) * (n + 1) / 2
 exports.triangleRoot = triangleRoot = (num) ->
   Math.floor (Math.sqrt(8 * num + 1) - 1) / 2

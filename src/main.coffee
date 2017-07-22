@@ -1,7 +1,7 @@
 $ = window.$ = window.jQuery = require 'jquery'
 window._ = require 'underscore'
 _str = require 'underscore.string'
-rx = require 'bobtail'
+window.rx = require 'bobtail'
 require 'jquery-serializejson'
 bobtailForm = require('bobtail-form').default
 {rxt, bind} = rx
@@ -18,7 +18,7 @@ deepGet = require 'lodash.get'
 inputs = require './inputs.coffee'
 
 curFormData = {}
-get = (nonReact) ->
+getData = (nonReact) ->
   if nonReact
     val = rx.snap => deepGet curFormData, nonReact
     if not val?
@@ -50,23 +50,23 @@ main = (initial) ->
         true
     }
 
+  charPri = (field) ->
+    base = getData("priority.#{field}")?.priorityVal
+    if base then " (#{base})" else ""
+
   $priorityTable = () -> R.table {class: 'table priority-table'}, [
-    R.thead R.tr bind ->
-      charPri = (field) ->
-        base = get('priority')?[field]
-        if base then " (#{base.priorityVal})" else ""
-      [
-        R.th {class: 'priority'}, "Priority"
-        R.th {class: "metatype"}, bind -> ["Metatype", charPri "metatype"]
-        R.th {class: "attributes"}, bind -> ["Attributes", charPri "attributes"]
-        R.th {class: "magic"}, bind -> ["Magic/Resonance", charPri "magic"]
-        R.th {class: 'skills'}, bind -> ["Skills", charPri 'skills']
-        R.th {class: 'resources'}, bind -> ["Resources", charPri 'resources']
-      ]
+    R.thead R.tr bind -> [
+      R.th {class: 'priority'}, "Priority"
+      R.th {class: "metatype"}, bind -> ["Metatype", charPri "metatype"]
+      R.th {class: "attributes"}, bind -> ["Attributes", charPri "attributes"]
+      R.th {class: "magic"}, bind -> ["Magic/Resonance", charPri "magic"]
+      R.th {class: 'skills'}, bind -> ["Skills", charPri 'skills']
+      R.th {class: 'resources'}, bind -> ["Resources", charPri 'resources']
+    ]
     R.tbody ["A", "B", "C", "D", "E"].map (priorityVal) ->
       tdFn = (field, fmtfn) ->
         choices = priority[field][priorityVal]
-        R.td {class: bind -> if isSelected get(), field, priorityVal then 'info'}, [
+        R.td {class: bind -> if isSelected getData(), field, priorityVal then 'info'}, [
           choices.map (choice) -> R.div {class: 'checkbox'}, R.label [
             $priorityRadio field, priorityVal, choice
             fmtfn choice
@@ -76,7 +76,7 @@ main = (initial) ->
         R.th {style: width: 1}, rx.flatten [
           R.strong priorityVal
           bind ->
-            field = _.chain(get().priority).pairs().findWhere({1: priorityVal}).value()?[0]
+            field = _.chain(getData().priority).pairs().findWhere({1: priorityVal}).value()?[0]
             if field then " (#{field})" else ""
         ]
         tdFn 'metatype', ({metatype, special}) -> "#{metatype} (#{special})"
@@ -96,8 +96,8 @@ main = (initial) ->
 
   $qualityPicker = (qualType) ->
     initQuals = initial?.qualities?[qualType]
-    rows = rx.array _.map initQuals?.skills, (skill, i) -> _.extend {choice: initQuals?.choice?[i]}, skill
-    selected = rx.array.from bind -> Array.from get("qualities.#{qualType}.skills") ? []
+    rows = rx.array _.map initQuals?.qualia, (skill, i) -> _.extend {choice: initQuals?.choice?[i]}, skill
+    selected = rx.array.from bind -> Array.from getData("qualities.#{qualType}")?.qualia ? []
     selectedNames = bind -> _.pluck selected.all(), 'name'
 
     nameStem = "qualities[#{qualType}]"
@@ -113,7 +113,7 @@ main = (initial) ->
       ]
       rows.indexed().map (val, iCell) ->
         otherNames = bind -> selectedNames.get().filter (e, i) -> i != iCell.get()
-        $select = inputs.select {class: 'form-control input-sm', name: "#{nameStem}[skills][]:object"},
+        $select = inputs.select {class: 'form-control input-sm', name: "#{nameStem}[qualia][]:object"},
           rx.flatten bind -> [
             qualities[qualType].map (qual) -> bind ->
               disable = bind -> qual.name in otherNames.get()
@@ -164,10 +164,10 @@ main = (initial) ->
           ]
           R.div {class: 'col-xs-5'}, bind ->
             opts = {
-              name: "#{nameStem}[choice][]:string"
+              name: "#{nameStem}[choice][#{iCell.get()}]:string"
               class: 'form-control input-sm'
             }
-            $text = R.input.text opts
+            $text = R.input.text _.extend {value: val?.choice}, opts
             $subSelect = inputs.select opts, subchoices.get()?.map? ({value, description}) -> inputs.option {
               value
               selected: value == val?.choice
@@ -181,10 +181,10 @@ main = (initial) ->
     ]
 
   $attrInput = (subfield, field="attributes") ->
-    metatypeAttr = bind -> metatypeStats[get('priority.metatype')?.metatype]?.attributes?[subfield]
+    metatypeAttr = bind -> metatypeStats[getData('priority.metatype')?.metatype]?.attributes?[subfield]
     max = bind ->
       base = metatypeAttr.get()?.limit ? 6
-      exceptional = _.findWhere(get('qualities')?.positive, {name: 'Exceptional Attribute'})
+      exceptional = _.findWhere(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
       if exceptional and exceptional.choice == subfield
         base += 1
       base
@@ -215,9 +215,9 @@ main = (initial) ->
     ]
 
   $magicAttrInput = (subfield) ->
-    charMagic = bind -> get('priority.magic')?.attribute
+    charMagic = bind -> getData('priority.magic')?.attribute
     max = bind ->
-      exceptional = _.findWhere(get('qualities')?.positive, {name: 'Exceptional Attribute'})
+      exceptional = _.findWhere(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
       if exceptional and exceptional.choice == subfield then 7
       else 6
 
@@ -256,15 +256,28 @@ main = (initial) ->
       ]
     ]
 
-  $skillWidget = ({name, group}, groupScore=bind -> null) ->
+  $skillWidget = ({name, group}, aptitude, groupScore=bind -> null) ->
+    min = bind -> if name in (getData()?.freeSkills ? []) then getData('priority.magic.skills')?.rating else 0
+    max = bind -> if aptitude.get() == name then 7 else 6
     $input = R.input.number {
-      name: "skills[#{name}][level]:number"
-      value: initial?.skills?[name].level ? 0
+      name: "skills[#{name}][rating]:number"
+      value: initial?.skills?[name]?.rating ? 0
       class: 'form-control input-sm'
-      min: 0
-      max: 6
+      min: bind -> min.get()
+      max: bind -> max.get()
       readonly: bind -> not not groupScore.get()
     }
+
+    rx.autoSub min.onSet, rx.skipFirst ([o, n]) ->
+      if n > parseInt $input.val()
+        $input.val n
+        $input.change()
+    rx.autoSub max.onSet, rx.skipFirst ([o, n]) ->
+      if n < parseInt $input.val()
+        $input.val n
+        $input.change()
+
+
     $specialty = R.input.text {
       name: "skills[#{name}][specialty][]:string"
       value: initial?.skills?[name]?.specialty?[0] ? ''
@@ -277,8 +290,8 @@ main = (initial) ->
       if n then $specialty.val('').change()
     R.div {class: 'form-group'}, [
       R.div {class: 'col-xs-5 text-right'}, R.label {class: 'control-label'}, name
-      R.div {class: 'col-xs-2'}, $input
-      R.div {class: 'col-xs-5'}, $specialty
+      R.div {class: 'col-xs-3'}, $input
+      R.div {class: 'col-xs-4'}, $specialty
       R.input.hidden {name: "skills[#{name}][group]:string", value: group}
     ]
 
@@ -311,10 +324,10 @@ main = (initial) ->
         }
       ]
       R.div {class: 'col-xs-2'}, R.input.number {
-        name: "knowledge[#{category}][][level]:number",
-        value: initRoot?.level ? 0
+        name: "knowledge[#{category}][][rating]:number",
+        value: initRoot?.rating ? 0
         class: 'form-control input-sm'
-        min: 0
+        min: 1  # a knowledge skill at rank 0 is one you don't have
         max: 6
       }
       R.div {class: 'col-xs-4'}, R.input.text {
@@ -326,24 +339,164 @@ main = (initial) ->
     ]
 
   {$form} = bobtailForm (cell) ->
-    curFormData = cell.data
-    magicType = bind -> get('startingMagic.attribute')?.name
+    curFormData = rx.snap -> cell.data
+    freeSkills = bind -> getData('priority.magic.skills')?.quantity ? 0
+    freeSkillsCount = rx.array.from bind -> [0...freeSkills.get()]
+    magicType = bind -> getData('priority.magic.attribute')?.name
+    aptitude = bind ->
+      index = _.findIndex getData('qualities.positive')?.qualia ? [], ({name}) -> name == 'Aptitude'
+      return getData('qualities.positive')?.choice[index]
     return R.form {
       class: 'form'
       submit: ->
-        rxStorage.local.setItem 'character', $(@).serializeJSON()
+        rxStorage.local.setItem 'character', $(@).serializeJSON(),
         false
     }, rx.flatten bind -> [
-      R.h2 [
-        "Priority Table"
+      R.h2 "Personal Data"
+      R.div {class: 'row'}, [
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Primary Name/Alias"
+          R.input.text {
+            class: 'form-control input-sm'
+            name: 'personalData[primaryName]:string'
+            value: initial?.personalData?.primaryName
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Other Name/Alias"
+          R.input.text {
+            class: 'form-control input-sm'
+            name: 'personalData[secondaryName]:string'
+            value: initial?.personalData?.secondaryName
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Metatype"
+          R.input.text {
+            class: 'form-control input-sm'
+            disabled: true
+            value: bind -> _str.capitalize getData('priority.metatype')?.metatype
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Ethnicity"
+          R.input.text {
+            class: 'form-control input-sm'
+            name: 'personalData[ethnicity]:string'
+            value: initial?.personalData?.ethnicity
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Gender"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[gender]:string'
+            value: initial?.personalData?.gender
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Age"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[age]:string'
+            value: initial?.personalData?.age
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Height"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[height]:string'
+            value: initial?.personalData?.height
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Weight"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[weight]:string'
+            value: initial?.personalData?.weight
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Hair"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[hair]:string'
+            value: initial?.personalData?.hair
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Eyes"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[eyes]:string'
+            value: initial?.personalData?.eyes
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Skin"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[skin]:string'
+            value: initial?.personalData?.skin
+          }
+        ]
+        R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
+          R.label {class: 'control-label'}, "Build"
+          R.input.number {
+            class: 'form-control input-sm'
+            name: 'personalData[build]:string'
+            value: initial?.personalData?.height
+          }
+        ]
       ]
+      R.div {class: 'row'}, [
+        R.div {class: 'form-group col-md-6'}, [
+          R.label {class: 'control-label'}, "Distinguishing Marks/Tattoos"
+          R.textarea {
+            rows: 4
+            class: 'form-control input-sm'
+            name: 'personalData[distinguishing]:string'
+            value: initial?.personalData?.distinguishing
+          }
+        ]
+        R.div {class: 'form-group col-md-6'}, [
+          R.label {class: 'control-label'}, "Description"
+          R.textarea {
+            rows: 4
+            class: 'form-control input-sm'
+            name: 'personalData[description]:string'
+            value: initial?.personalData?.description
+          }
+        ]
+        R.div {class: 'form-group col-md-6'}, [
+          R.label {class: 'control-label'}, "Backstory"
+          R.textarea {
+            rows: 4
+            class: 'form-control input-sm'
+            name: 'personalData[backstory]:string'
+            value: initial?.personalData?.description
+          }
+        ]
+        R.div {class: 'form-group col-md-6'}, [
+          R.label {class: 'control-label'}, "Relationships"
+          R.textarea {
+            rows: 4
+            class: 'form-control input-sm'
+            name: 'personalData[backstory]:string'
+            value: initial?.personalData?.relationships
+          }
+        ]
+      ]
+      R.h2 "Priority Table"
       R.div {class: 'row'}, R.div {class: 'col-xs-12'}, $priorityTable()
       R.h2 rx.flatten [
         "Attributes "
         R.strong bind ->
-          base = util.sum attributeNames.map (attr) -> metatypeStats[get('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
+          base = util.sum attributeNames.map (attr) -> metatypeStats[getData('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
           spent = util.sum(_.values curFormData.attributes) - base
-          allowed = get()?.priority?.attributes?.points
+          allowed = getData()?.priority?.attributes?.points
           R.span {class: bind -> if spent > allowed then "red" else ""}, [
             "("
             spent
@@ -367,10 +520,10 @@ main = (initial) ->
       R.h2 rx.flatten [
         "Special Attributes "
         R.strong bind ->
-          base = 1 + (get('startingMagic.attribute')?.value ? 0)
-          if get('priority.metatype')?.metatype == 'human' then base += 1
-          spent = -base + util.sum _.values get().specialAttributes
-          allowed = get('priority.metatype')?.special
+          base = 1 + (getData('priority.magic.attribute')?.value ? 0)
+          if getData('priority.metatype')?.metatype == 'human' then base += 1
+          spent = -base + util.sum _.values getData().specialAttributes
+          allowed = getData('priority.metatype')?.special
           R.span {class: bind -> if spent > allowed then "red" else ""}, [
             "("
             spent
@@ -389,19 +542,46 @@ main = (initial) ->
         R.div {class: 'col-xs-6'}, $qualityPicker 'positive'
         R.div {class: 'col-xs-6'}, $qualityPicker 'negative'
       ]
-      R.div {class: 'form-horizontal'}, [
+      R.div {class: 'form-horizontal'}, rx.flatten [
         R.h2 "Active Skills"
-        R.h4 rx.flatten [
-          "skills: "
-          "("
-          bind -> util.sum _.chain(curFormData.skills).values()?.filter(([skill]) -> curFormData?.skillGroups?[skill?.group]).pluck('level').value()
-          bind -> " / #{priority.skills[get('priority')?.skills]?.skills ? '??'})"
-        ]
-        R.h4 rx.flatten [
-          "groups: "
-          "("
-          bind -> util.sum _.values curFormData.skillGroups
-          bind -> " / #{priority.skills[get('priority')?.skills]?.groups ? '??'})"
+        R.div {class: 'row'}, [
+          R.div {class: 'col-sm-6'}, [
+            R.h4 rx.flatten [
+              "skills: "
+              "("
+              bind ->
+                skills = _
+                  .chain curFormData.skills
+                  .pairs()
+                  .filter ([name, skill]) -> not curFormData?.skillGroups?[skill?.group]
+                  .pluck 1
+                  .value()
+
+                util.sum(_.pluck skills, 'rating') +
+                  skills.filter(({specialty}) -> specialty?[0]?.length).length -
+                  freeSkills.get() * getData('priority.magic.skills')?.rating ? 0
+              bind -> " / #{getData('priority.skills')?.skills ?  '??'})"
+            ]
+            R.h4 rx.flatten [
+              "groups: "
+              "("
+              bind -> util.sum _.values curFormData.skillGroups
+              bind -> " / #{getData('priority.skills')?.groups ? '??'})"
+            ]
+          ]
+          R.div {class: 'col-sm-6'}, bind -> freeSkillsCount.map (i) ->
+            R.p {class: 'input-group input-group-sm'}, [
+              R.span {class: 'input-group-addon'}, 'Free Skill'
+              inputs.select {
+                class: 'form-control input-sm'
+                name: 'freeSkills[]:string'
+              }, rx.flatten [
+                inputs.option {}
+                bind -> _.where(active, {type: if magicType.get() == 'magic' then 'magical' else 'resonance'}).map (skill) ->
+                  inputs.option {value: skill.name, selected: initial?.freeSkills[i] == skill.name}, skill.name
+              ]
+              R.span {class: 'input-group-addon'}, bind -> getData('priority.magic.skills')?.rating
+            ]
         ]
         R.div {class: 'row', style: {display: 'flex', 'flex-wrap': 'wrap'}}, rx.flatten groups.map (group) ->
           skills = _.where(active, {group: group.name})
@@ -416,7 +596,7 @@ main = (initial) ->
                 class: 'form-control input-sm'
               }
             ]
-            skills.map (skill) -> $skillWidget skill, bind -> curFormData?.skillGroups?[skill.group]
+            skills.map (skill) -> $skillWidget skill, aptitude, bind -> curFormData?.skillGroups?[skill.group]
           ]
           bind ->
             if group.type not in ['magical', 'resonance'] or (
@@ -440,7 +620,7 @@ main = (initial) ->
               rx.flatten(skills).map (skill) ->
                 bind ->
                   if not skill.group?
-                    $skillWidget skill
+                    $skillWidget skill, aptitude
                   else null
             ]
             else null
@@ -448,8 +628,9 @@ main = (initial) ->
       R.h2 rx.flatten [
         "Knowledge Skills"
         bind ->
-          cap = ((get('attributes')?.logic ? 0) + (get('attributes')?.intuition ? 0)) * 2
-          total = util.sum _.chain(get().knowledge).values().flatten().pluck('level').value()
+          cap = ((getData('attributes')?.logic ? 0) + (getData('attributes')?.intuition ? 0)) * 2
+          skills = _.chain(getData().knowledge).values().flatten().value()
+          total = util.sum(_.pluck skills, 'rating') + skills.filter(({specialty}) -> specialty?[0]?.length).length
           return " (#{total} / #{cap})"
       ]
       R.div {class: 'form-horizontal'}, [
@@ -465,7 +646,7 @@ main = (initial) ->
           R.div {class: 'col-md-6'}, $mkKnowledgeGrp 'language'
           R.div {class: 'col-md-6'}, rx.flatten [
             R.h3 "native language(s)"
-            bind -> [0..if _.findWhere(get()?.qualities, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
+            bind -> [0..if _.findWhere(getData()?.qualities, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
               R.div {class: 'col-xs-4'}, R.input.text {
                 placeholder: "native language"
                 name: "nativeLang[][name]:string"
@@ -481,8 +662,8 @@ main = (initial) ->
         ]
       ]
       R.h2 bind ->
-        pos = bind -> util.sum _.pluck _.where(get()?.qualities, {qualType: 'positive'}), 'karma'
-        neg = bind -> util.sum _.pluck _.where(get()?.qualities, {qualType: 'negative'}), 'karma'
+        pos = bind -> util.sum _.pluck getData('qualities.positive')?.qualia, 'karma'
+        neg = bind -> util.sum _.pluck getData('qualities.negative')?.qualia, 'karma'
 
         R.p "Spend Karma: (0/#{25 + neg.get() - pos.get()})"
       R.div {class: 'form-group'}, R.div {class: 'col-xs-12 col-md-offset-3 col-md-6'}, R.p R.button {type: 'Submit', class: 'btn btn-success btn-block'}, R.h4 "Save Character"

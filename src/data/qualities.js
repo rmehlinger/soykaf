@@ -221,6 +221,7 @@ module.exports = {
     {
       "name": "Addiction, Mild",
       "karma": 4,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2
       },
@@ -229,6 +230,7 @@ module.exports = {
     {
       "name": "Addiction, Moderate",
       "karma": 9,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -4
       },
@@ -237,6 +239,7 @@ module.exports = {
     {
       "name": "Addiction, Severe",
       "karma": 20,
+      "select": "playerDescribed",
       "effect": [
         {
           "bonus": -4,
@@ -251,6 +254,7 @@ module.exports = {
     {
       "name": "Addiction, Burnout",
       "karma": 25,
+      "select": "playerDescribed",
       "effect": [
         {
           "bonus": -6,
@@ -265,6 +269,7 @@ module.exports = {
     {
       "name": "Allergy, Mild, Uncommon",
       "karma": 5,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -1,
         "optional": true,
@@ -274,6 +279,7 @@ module.exports = {
     {
       "name": "Allergy, Mild, Common",
       "karma": 10,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -1,
         "optional": true,
@@ -283,6 +289,7 @@ module.exports = {
     {
       "name": "Allergy, Moderate, Unommon",
       "karma": 10,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -292,6 +299,7 @@ module.exports = {
     {
       "name": "Allergy, Moderate, Common",
       "karma": 15,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -2,
         "optional": true,
@@ -301,6 +309,7 @@ module.exports = {
     {
       "name": "Allergy, Severe, Unommon",
       "karma": 15,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -3,
         "optional": true,
@@ -310,6 +319,7 @@ module.exports = {
     {
       "name": "Allergy, Severe, Common",
       "karma": 20,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -3,
         "optional": true,
@@ -328,6 +338,7 @@ module.exports = {
     {
       "name": "Allergy, Extreme, Common",
       "karma": 25,
+      "select": "playerDescribed",
       "effect": {
         "bonus": -4,
         "optional": true,

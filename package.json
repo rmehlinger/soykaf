@@ -28,7 +28,7 @@
   "homepage": "https://github.com/rmehlinger/soykaf#readme",
   "dependencies": {
     "bobtail": "^2.0.1",
-    "bobtail-form": ">=0.2.0",
+    "bobtail-form": ">=0.2.1",
     "bobtail-storage": "^1.1.0",
     "bootstrap": "^3.3.7",
     "jquery": "^3.2.1",

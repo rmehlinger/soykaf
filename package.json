@@ -7,14 +7,15 @@
     "start": "npm run build-assets && node server.js",
     "start-dev": "npm run watch & npm run live-reload & nodemon server.js",
     "watch": "npm run watch-js & npm run watch-css",
-    "watch-js": "watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose --debug",
+    "watch-js": "mkdir -p static/scripts && watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose --debug",
     "build-js": "mkdir -p static/scripts && browserify src/main.coffee --transform coffeeify --extensions=\".coffee\" --outfile static/scripts/bundle.js",
     "watch-css": "nodemon -w css -e sass -x 'npm run build-css'",
-    "build-css": "mkdir -p static/css && node-sass -r --output-style compressed css/soykaf.sass -o static/css",
+    "copy-darkly": "wget https://bootswatch.com/darkly/bootstrap.min.css -O static/css/darkly-theme.css",
+    "build-css": "mkdir -p static/css && npm run copy-darkly && npm run sassify",
     "build-assets": "npm run build-js && npm run build-css",
     "copy-css": "cp -ra css/*.css static/css",
     "live-reload": "live-reload static/**/* --port 9092",
-    "heroku": "npm prune && npm i && cp -ra . \"/mnt/g/Dropbox (Personal)/Apps/Heroku/soykaf\""
+    "sassify": "node-sass -r --output-style compressed css/soykaf.sass -o static/css"
   },
   "repository": {
     "type": "git",

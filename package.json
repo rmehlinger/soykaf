@@ -10,7 +10,7 @@
     "watch-js": "mkdir -p static/scripts && watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose --debug",
     "build-js": "mkdir -p static/scripts && browserify src/main.coffee --transform coffeeify --extensions=\".coffee\" --outfile static/scripts/bundle.js",
     "watch-css": "nodemon -w css -e sass -x 'npm run build-css'",
-    "copy-darkly": "wget https://bootswatch.com/darkly/bootstrap.min.css -O static/css/darkly-theme.css",
+    "copy-darkly": "wget https://bootswatch.com/slate/bootstrap.min.css -O static/css/slate-theme.css",
     "build-css": "mkdir -p static/css && npm run copy-darkly && npm run sassify",
     "build-assets": "npm run build-js && npm run build-css",
     "copy-css": "cp -ra css/*.css static/css",

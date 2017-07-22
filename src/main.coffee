@@ -184,8 +184,8 @@ main = (initial) ->
     metatypeAttr = bind -> metatypeStats[getData('priority.metatype')?.metatype]?.attributes?[subfield]
     max = bind ->
       base = metatypeAttr.get()?.limit ? 6
-      exceptional = _.findWhere(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
-      if exceptional and exceptional.choice == subfield
+      index = _.findIndex(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
+      if index != -1 and getData('qualities.positive')?.choice?[index] == subfield
         base += 1
       base
     min = bind -> metatypeAttr.get()?.base ? 1
@@ -217,8 +217,8 @@ main = (initial) ->
   $magicAttrInput = (subfield) ->
     charMagic = bind -> getData('priority.magic')?.attribute
     max = bind ->
-      exceptional = _.findWhere(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
-      if exceptional and exceptional.choice == subfield then 7
+      index = _.findIndex(getData('qualities.positive')?.qualia, {name: 'Exceptional Attribute'})
+      if index != -1 and getData('qualities.positive')?.choice?[index] == subfield then 7
       else 6
 
     min = bind -> charMagic.get()?.value
@@ -349,8 +349,8 @@ main = (initial) ->
     return R.form {
       class: 'form'
       submit: ->
-        rxStorage.local.setItem 'character', $(@).serializeJSON(),
-        false
+        rxStorage.local.setItem 'character', $(@).serializeJSON()
+        return false
     }, rx.flatten bind -> [
       R.h2 "Personal Data"
       R.div {class: 'row'}, [

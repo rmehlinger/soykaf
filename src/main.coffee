@@ -142,8 +142,8 @@ main = (initial) ->
             value: name, description: _str.capitalize(name) + if group then " (#{group})" else ""
           }
           else if sub == 'skill group' then groups.map (group) -> {
-            value: group
-            description: _str.capitalize group
+            value: group.name
+            description: _str.capitalize group.name
           }
           else if qual.name == 'Exceptional Attribute'
             attributeNames.concat(['magic', 'resonance']).map (attr) -> {
@@ -166,12 +166,16 @@ main = (initial) ->
             opts = {
               name: "#{nameStem}[choice][#{iCell.get()}]:string"
               class: 'form-control input-sm'
+              required: true
             }
             $text = R.input.text _.extend {value: val?.choice}, opts
-            $subSelect = inputs.select opts, subchoices.get()?.map? ({value, description}) -> inputs.option {
-              value
-              selected: value == val?.choice
-            }, description
+            $subSelect = inputs.select opts, rx.flatten [
+              inputs.option {}
+              subchoices.get()?.map? ({value, description}) -> inputs.option {
+                value
+                selected: value == val?.choice
+              }, description
+            ]
             bind ->
               if subchoices.get() == 'text' then $text
               else if _.isArray subchoices.get() then $subSelect
@@ -256,7 +260,7 @@ main = (initial) ->
       ]
     ]
 
-  $skillWidget = ({name, group}, aptitude, groupScore=bind -> null) ->
+  $skillWidget = ({name, group}, aptitude, incompetentGroup, groupScore=bind -> null) ->
     min = bind -> if name in (getData()?.freeSkills ? []) then getData('priority.magic.skills')?.rating else 0
     max = bind -> if aptitude.get() == name then 7 else 6
     $input = R.input.number {
@@ -265,7 +269,8 @@ main = (initial) ->
       class: 'form-control input-sm'
       min: bind -> min.get()
       max: bind -> max.get()
-      readonly: bind -> not not groupScore.get()
+      readonly: bind -> not not groupScore.get() or (group and group == incompetentGroup.get())
+      group
     }
 
     rx.autoSub min.onSet, rx.skipFirst ([o, n]) ->
@@ -282,7 +287,7 @@ main = (initial) ->
       name: "skills[#{name}][specialty][]:string"
       value: initial?.skills?[name]?.specialty?[0] ? ''
       class: 'form-control input-sm'
-      disabled: bind -> not not groupScore.get()
+      disabled: bind -> not not groupScore.get() or (group and group == incompetentGroup.get())
       placeholder: 'specialty'
     }
     rx.autoSub groupScore.onSet, rx.skipFirst ([o, n]) ->
@@ -321,6 +326,7 @@ main = (initial) ->
           value: initRoot?.name ? ''
           class: 'form-control input-sm'
           placeholder: "subject"
+          required: true
         }
       ]
       R.div {class: 'col-xs-2'}, R.input.number {
@@ -343,6 +349,14 @@ main = (initial) ->
     freeSkills = bind -> getData('priority.magic.skills')?.quantity ? 0
     freeSkillsCount = rx.array.from bind -> [0...freeSkills.get()]
     magicType = bind -> getData('priority.magic.attribute')?.name
+    incompetentGroup = bind ->
+      index = _.findIndex(getData('qualities.negative')?.qualia, {name: 'Incompetent'})
+      if index != -1 then getData('qualities.negative')?.choice?[index]
+      else null
+    rx.autoSub incompetentGroup.onSet, ([o, n]) ->
+      $("input[group='#{o}']").val(0).change()
+      $("input[group='#{n}']").val('X').change()
+
     aptitude = bind ->
       index = _.findIndex getData('qualities.positive')?.qualia ? [], ({name}) -> name == 'Aptitude'
       return getData('qualities.positive')?.choice[index]
@@ -583,29 +597,32 @@ main = (initial) ->
               R.span {class: 'input-group-addon'}, bind -> getData('priority.magic.skills')?.rating
             ]
         ]
-        R.div {class: 'row', style: {display: 'flex', 'flex-wrap': 'wrap'}}, rx.flatten groups.map (group) ->
-          skills = _.where(active, {group: group.name})
-          mkgrp = -> R.div {class: 'col-lg-6 col-xs-12', style: {clear: 'right'}}, _.flatten [
-            R.h4 {class: 'form-group'}, [
-              R.div {class: 'col-xs-5'}, R.label {class: 'control-label'}, "#{group.name} (#{group.type[...3]})"
-              R.div {class: 'col-xs-2'}, R.input.number {
-                name: "skillGroups[#{group.name}]:number"
-                min: 0
-                max: 6
-                value: initial?.skillGroups?[group.name] ? 0
-                class: 'form-control input-sm'
-              }
+        R.div {class: 'row', style: {display: 'flex', 'flex-wrap': 'wrap'}}, do ->
+          rx.flatten groups.map (group) ->
+            skills = _.where(active, {group: group.name})
+            mkgrp = -> R.div {class: 'col-lg-6 col-xs-12', style: {clear: 'right'}}, _.flatten [
+              R.h4 {class: 'form-group'}, [
+                R.div {class: 'col-xs-5'}, R.label {class: 'control-label'}, "#{group.name} (#{group.type[...3]})"
+                R.div {class: 'col-xs-2'}, R.input.number {
+                  name: "skillGroups[#{group.name}]:number"
+                  min: 0
+                  max: 6
+                  value: initial?.skillGroups?[group.name] ? 0
+                  class: 'form-control input-sm'
+                  group: group.name
+                  readonly: bind -> incompetentGroup.get() == group.name
+                }
+              ]
+              skills.map (skill) -> $skillWidget skill, aptitude, incompetentGroup, bind -> curFormData?.skillGroups?[skill.group]
             ]
-            skills.map (skill) -> $skillWidget skill, aptitude, bind -> curFormData?.skillGroups?[skill.group]
-          ]
-          bind ->
-            if group.type not in ['magical', 'resonance'] or (
-              group.type == 'magical' and magicType.get() == 'magic'
-            ) or (
-              group.type == 'resonance' and magicType.get() == 'resonance'
-            )
-              mkgrp()
-            else null
+            bind ->
+              if group.type not in ['magical', 'resonance'] or (
+                group.type == 'magical' and magicType.get() == 'magic'
+              ) or (
+                group.type == 'resonance' and magicType.get() == 'resonance'
+              )
+                mkgrp()
+              else null
         R.h4 "Others"
         R.div {class: 'row'}, rx.flatten (_
           .chain(active)

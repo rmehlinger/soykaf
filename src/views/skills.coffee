@@ -23,7 +23,7 @@ $freeSkill = exports.$freeSkill = (i, initial, magicType) -> R.p {class: 'input-
   }, rx.flatten [
     inputs.option {}
     bind -> _.where(active, {type: if magicType.get() == 'magic' then 'magical' else 'resonance'}).map (skill) ->
-      inputs.option {value: skill.name, selected: initial?.freeSkills[i] == skill.name}, skill.name
+      inputs.option {value: skill.name, selected: initial?.freeSkills?[i] == skill.name}, skill.name
   ]
   R.span {class: 'input-group-addon'}, bind -> main.getData('priority.magic.skills')?.rating
 ]

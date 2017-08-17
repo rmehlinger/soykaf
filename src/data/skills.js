@@ -15,7 +15,6 @@ let active = [
   {name: "escape artist", attribute: "agility", type: "physical"},
   {name: "gymnastics", attribute: "agility", group: "athletics", type: "physical"},
   {name: "locksmith", attribute: "agility", type: "technical"},
-  {name: "lockpicking", attribute: "agility", type: "technical"},
   {name: "palming", attribute: "agility", group: "stealth", type: "physical"},
   {name: "sneaking", attribute: "agility", group: "stealth", type: "physical"},
   {name: "gunnery", attribute: "agility", type: "vehicle"},

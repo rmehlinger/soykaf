@@ -55,7 +55,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Gender"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[gender]:string'
         value: initial?.personalData?.gender
@@ -63,7 +63,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Age"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[age]:string'
         value: initial?.personalData?.age
@@ -71,7 +71,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Height"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[height]:string'
         value: initial?.personalData?.height
@@ -79,7 +79,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Weight"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[weight]:string'
         value: initial?.personalData?.weight
@@ -87,7 +87,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Hair"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[hair]:string'
         value: initial?.personalData?.hair
@@ -95,7 +95,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Eyes"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[eyes]:string'
         value: initial?.personalData?.eyes
@@ -103,7 +103,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Skin"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[skin]:string'
         value: initial?.personalData?.skin
@@ -111,7 +111,7 @@ exports.default = (initial, metatype) -> R.div [
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [
       R.label {class: 'control-label'}, "Build"
-      R.input.number {
+      R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[build]:string'
         value: initial?.personalData?.height

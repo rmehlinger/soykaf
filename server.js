@@ -8,7 +8,7 @@ app.use('/static', express.static(__dirname + '/static'));
 app.use('/node_modules',  express.static(__dirname + '/node_modules'));
 
 // viewed at http://localhost:5000
-app.get('/', function(req, res) {
+app.get('*', function(req, res) {
   res.sendFile(path.join(__dirname + '/index.html'));
 });
 

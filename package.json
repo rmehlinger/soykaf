@@ -4,19 +4,23 @@
   "description": "Character Management App for Shadowrun 5e",
   "main": "index.js",
   "scripts": {
-    "start": "npm run build-assets && npm run minify && node server.js",
+    "start": "npm run build && npm run minify && node server.js",
     "start-dev": "npm run watch & npm run live-reload & nodemon server.js",
-    "watch": "npm run watch-js & npm run watch-css",
-    "watch-js": "mkdir -p static/scripts && watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --outfile static/scripts/bundle.js --verbose --debug",
-    "build-js": "mkdir -p static/scripts && browserify src/main.coffee --transform coffeeify --extensions=\".coffee\" --outfile static/scripts/bundle.js",
+    "mkdirs": "mkdir -p static/scripts && mkdir -p static/css",
+    "watch": "npm run mkdirs && npm run watch-js & npm run watch-css",
+    "watch-js": "npm run watchify | npm run exorcist",
     "watch-css": "nodemon -w css -e sass -x 'npm run build-css'",
+    "watchify": "watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --verbose --debug -o '$(npm run exorcist)'",
+    "build": "npm run mkdirs && npm run build-js && npm run build-css",
+    "build-js": "npm run browserify | npm run exorcist",
+    "build-css": "npm run copy-darkly && npm run sassify",
+    "browserify": "browserify src/main.coffee --transform coffeeify --extensions=\".coffee\" --debug",
+    "exorcist": "exorcist static/scripts/bundle.js.map > static/scripts/bundle.js",
     "minify": "uglifyjs -mc --source-map -o static/scripts/bundle.js static/scripts/bundle.js",
+    "sassify": "node-sass -r --output-style compressed css/soykaf.sass -o static/css",
     "copy-darkly": "wget https://bootswatch.com/slate/bootstrap.min.css -O static/css/slate-theme.css",
-    "build-css": "mkdir -p static/css && npm run copy-darkly && npm run sassify",
-    "build-assets": "npm run build-js && npm run build-css",
     "copy-css": "cp -ra css/*.css static/css",
-    "live-reload": "live-reload static/**/* --port 9092",
-    "sassify": "node-sass -r --output-style compressed css/soykaf.sass -o static/css"
+    "live-reload": "live-reload static/**/* --port 9092"
   },
   "repository": {
     "type": "git",
@@ -48,6 +52,7 @@
     "underscore.string": "^3.3.4"
   },
   "devDependencies": {
+    "exorcist": "^0.4.0",
     "live-reload": "^1.1.0",
     "watchify": "^3.9.0"
   }

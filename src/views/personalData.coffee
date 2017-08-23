@@ -27,6 +27,7 @@ exports.default = (initial, metatype) -> R.div [
         class: 'form-control input-sm'
         name: 'personalData[primaryName]:string'
         value: initial?.personalData?.primaryName
+        required: true
       }
     ]
     R.div {class: 'col-md-3 col-lg-2 col-xs-6'}, R.div {class: 'form-group'}, [

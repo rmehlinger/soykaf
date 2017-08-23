@@ -22,8 +22,7 @@ $priorityRadio = (initial, field, priorityVal, choice) ->
     value: JSON.stringify(_.extend {priorityVal}, choice)
     field
     priorityVal
-    checked: do ->
-      return value == stringify initial?.priority?[field]
+    checked: value == stringify initial?.priority?[field]
     change: (event) -> rx.transaction ->
       if event.target.checked
         $radios = $("input[type=checkbox][priorityVal=#{priorityVal}]").add $("input[field=#{field}]")

@@ -1,9 +1,15 @@
+#oldWarningFunction = console.warn
+#console.warn = ->
+#    debugger
+#    oldWarningFunction.apply console, arguments
+
 $ = window.$ = window.jQuery = require 'jquery'
 window._ = require 'underscore'
 _str = require 'underscore.string'
 window.rx = require 'bobtail'
 require 'jquery-serializejson'
 bobtailForm = require('bobtail-form').default
+
 {rxt, bind} = rx
 R = rxt.tags
 priority = require '../data/priority.js'
@@ -33,7 +39,7 @@ exports.getData = getData = (nonReact) ->
   else rx.snap => curFormData
 
 
-exports.editCharacter = (initial) ->
+exports.editCharacter = (initial, submitFn) ->
   {$form} = bobtailForm (cell) ->
     curFormData = rx.snap -> cell.data
     freeSkills = bind -> getData('priority.magic.skills')?.quantity ? 0
@@ -45,7 +51,7 @@ exports.editCharacter = (initial) ->
       else null
     rx.autoSub incompetentGroup.onSet, ([o, n]) ->
       $("input[group='#{o}']").val(0).change()
-      $("input[group='#{n}']").val('X').change()
+      $("input[group='#{n}']").val(null).change()
 
     aptitude = bind ->
       index = _.findIndex getData('qualities.positive')?.qualia ? [], ({name}) -> name == 'Aptitude'
@@ -53,8 +59,10 @@ exports.editCharacter = (initial) ->
     return R.form {
       class: 'form'
       submit: ->
-        rxStorage.local.setItem 'character', $(@).serializeJSON()
-        return false
+        data = $(@).serializeJSON()
+        submitFn data
+        _.defer -> window.router.transitionTo 'profile'
+        false
     }, rx.flatten bind -> [
       $personalData initial, bind -> getData('priority.metatype')?.metatype
       R.h2 "Priority Table"

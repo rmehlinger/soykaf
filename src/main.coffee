@@ -23,7 +23,7 @@ firebase.initializeApp {
 googleProvider = new firebase.auth.GoogleAuthProvider()
 window.db = firebase.database()
 
-curUser = rx.cell -1
+window.curUser = rx.cell -1
 firebase.auth().onAuthStateChanged (user) -> curUser.set user
 
 window.router = cherrytree {
@@ -52,14 +52,14 @@ router.use (transition) => rx.transaction =>
 
 router.listen()
 
-depCharsShort = new DepSyncArray db.ref 'characters-short'
-curCharacter = new DepFireTailCell -> db.ref "characters/#{curParams.get 'charId'}"
-
 $('body').append R.div {class: 'container'}, rx.flatten [
   bind ->
     if curUser.get() == -1 then ''
     else if curUser.get()
       user = curUser.get()
+      uid = user.uid
+      depCharsShort = new DepSyncArray db.ref "characters-short/#{uid}"
+      curCharacter = new DepFireTailCell -> db.ref "characters/#{uid}/#{curParams.get 'charId'}"
       return [
         switch curRoutesList.at(0)?.name
           when 'home' then bind ->
@@ -80,7 +80,7 @@ $('body').append R.div {class: 'container'}, rx.flatten [
                     class: 'btn btn-xs btn-danger pull-right'
                     click: ->
                       if confirm "Are you sure you would like to delete #{char.primaryName}?"
-                        db.ref("characters/#{charId}").remove => db.ref("characters-short/#{charId}").remove()
+                        db.ref("characters/#{curUser.raw().uid}/#{charId}").remove => db.ref("characters-short/#{curUser.raw().uid}/#{charId}").remove()
                       return false
                   }, R.small {class: 'glyphicon glyphicon-remove', style: marginTop: 3}
                 ]
@@ -93,14 +93,14 @@ $('body').append R.div {class: 'container'}, rx.flatten [
             }, "New Character"
           ]
           when 'new-character' then R.div {class: "row"}, R.div {class: 'col-xs-12'}, editCharacter {}, (data) ->
-            ref = db.ref('characters').push()
+            ref = db.ref("characters/#{uid}").push()
             ref.set data
-            db.ref("characters-short/#{ref.key}").set {primaryName: data.personalData.primaryName}
+            db.ref("characters-short/#{uid}/#{ref.key}").set {primaryName: data.personalData.primaryName}
           when 'character'
             if curCharacter.data then R.div {class: "row"}, R.div {class: 'col-xs-12'},
               editCharacter curCharacter.data, (data) ->
                 curCharacter.refCell.raw().set(data)
-                db.ref("characters-short/#{curParams.get 'charId'}").set {primaryName: data.personalData.primaryName}
+                db.ref("characters-short/#{uid}/#{curParams.get 'charId'}").set {primaryName: data.personalData.primaryName}
             else 'loading...'
           else R.h1 "WHAT"
       ]

@@ -28,7 +28,7 @@ $freeSkill = exports.$freeSkill = (i, initial, magicType) -> R.p {class: 'input-
   R.span {class: 'input-group-addon'}, bind -> main.getData('priority.magic.skills')?.rating
 ]
 
-$skillWidget = exports.$skillWidget = ({name, group, aptitude, incompetentGroup, initial, groupScore}) ->
+$skillWidget = exports.$skillWidget = ({name, group, attribute, aptitude, incompetentGroup, initial, groupScore}) ->
   groupScore ?= bind -> null
   min = bind -> if name in (main.getData()?.freeSkills ? []) then main.getData('priority.magic.skills')?.rating else 0
   max = bind -> if aptitude.get() == name then 7 else 6
@@ -52,21 +52,22 @@ $skillWidget = exports.$skillWidget = ({name, group, aptitude, incompetentGroup,
       $input.change()
 
 
-  $specialty = R.input.text {
-    name: "skills[#{name}][specialty][]:string"
-    value: initial?.skills?[name]?.specialty?[0] ? ''
+  $specialties = R.input.text {
+    name: "skills[#{name}][specialties][]:string"
+    value: initial?.skills?[name]?.specialties?[0] ? ''
     class: 'form-control input-sm'
     disabled: bind -> not not groupScore.get() or (group and group == incompetentGroup.get())
-    placeholder: 'specialty'
+    placeholder: 'specialties'
   }
   rx.autoSub groupScore.onSet, rx.skipFirst ([o, n]) ->
     if o? and n? then $input.val(n).change()
-    if n then $specialty.val('').change()
+    if n then $specialties.val('').change()
   R.div {class: 'form-group'}, [
     R.div {class: 'col-xs-5 text-right'}, R.label {class: 'control-label'}, name
     R.div {class: 'col-xs-3'}, $input
-    R.div {class: 'col-xs-4'}, $specialty
+    R.div {class: 'col-xs-4'}, $specialties
     R.input.hidden {name: "skills[#{name}][group]:string", value: group}
+    R.input.hidden {name: "skills[#{name}][attribute]:string", value: attribute}
   ]
 
 
@@ -86,7 +87,12 @@ $skillGroup = exports.$skillGroup = ({group, incompetentGroup, initial, aptitude
       }
     ]
     skills.map (skill) ->
-      $skillWidget {name: skill.name, group: skill.group, initial, aptitude, incompetentGroup, groupScore: bind -> main.getData('skillGroups')?[skill.group]}
+      $skillWidget _.extend {
+        initial,
+        aptitude,
+        incompetentGroup,
+        groupScore: bind -> main.getData('skillGroups')?[skill.group]
+      }, skill
   ]
   bind ->
     if group.type not in ['magical', 'resonance'] or (
@@ -105,7 +111,7 @@ $skillsByType = exports.$skillsByType = ({type, skills, magicType, aptitude, ini
       rx.flatten(skills).map (skill) ->
         bind ->
           if not skill.group?
-            $skillWidget {name: skill.name, aptitude, initial}
+            $skillWidget _.extend {aptitude, initial}, skill
           else null
     ]
     else null
@@ -147,8 +153,8 @@ $knowlSkillRow = (category, i, initial, rmFn) ->
       max: 6
     }
     R.div {class: 'col-xs-4'}, R.input.text {
-      name: "knowledge[#{category}][][specialty][]:string"
-      value: initRoot?.specialty?[0] ? ''
+      name: "knowledge[#{category}][][specialties][]:string"
+      value: initRoot?.specialties?[0] ? ''
       class: 'form-control input-sm'
       placeholder: 'specialization'
     }

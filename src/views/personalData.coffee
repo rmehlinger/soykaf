@@ -115,7 +115,7 @@ exports.default = (initial, metatype) -> R.div [
       R.input.text {
         class: 'form-control input-sm'
         name: 'personalData[build]:string'
-        value: initial?.personalData?.height
+        value: initial?.personalData?.build
       }
     ]
   ]

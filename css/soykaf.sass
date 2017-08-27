@@ -1,6 +1,9 @@
 body, body *
   font-family: 'Anonymous Pro', "Courier New", courier, monospace
 
+table.table
+  margin-bottom: 0 !important
+
 .priority-table
   td
     padding-top: 0 !important
@@ -19,6 +22,12 @@ body, body *
   margin: 0 15px
   display: inline-block
 
+.jumbotron
+  padding-top: 15px !important
+  padding-bottom: 15px !important
+  .title h1, h2, h3, h4, h5, h6
+    display: inline
+
 input
   &:disabled, &:read-only
     background-color: #d8d8d8 !important
@@ -33,3 +42,27 @@ input
 
 ul
   list-style: none
+
+table td.crossed
+  background-image: linear-gradient(to top right, darken(#2e3338, 5%) calc(50% - 1px), darken(#2e3338, 5%), transparent calc(50% + 1px))
+
+@media print
+  body
+    margin: 0
+    padding: 0 !important
+    min-width: 768px
+    .text-muted
+      font-weight: 200
+      color: #444 !important
+
+  .container
+    min-width: 750px
+
+  @for $i from 1 through 12
+    .col-md-#{$i}
+      width: #{percentage(round($i*8.33)/100)} !important
+      float: left
+
+  table.table > tbody > tr >td.crossed
+    background-image: linear-gradient(to top right, #ccc calc(50% - 1px), #ccc, transparent calc(50% + 1px)) !important
+    -webkit-print-color-adjust: exact

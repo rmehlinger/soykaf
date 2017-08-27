@@ -28,19 +28,21 @@ $personalData = require('./personalData.coffee').default
 {$attrInput, $magicAttrInput} = require './attrInputs.coffee'
 {$freeSkill, $skillGroup, $skillsByType, $mkKnowledgeGrp} = require './skills.coffee'
 
-curFormData = {}
-exports.getData = getData = (nonReact) ->
-  if nonReact
-    val = rx.snap => deepGet curFormData, nonReact
-    if not val?
-      return deepGet curFormData, nonReact
-    else val
-  else rx.snap => curFormData
-
 
 exports.editCharacter = (initial, submitFn) ->
   {$form} = bobtailForm (cell) ->
-    curFormData = rx.snap -> cell.data
+    exports.getData = getData = (nonReact) ->
+      if nonReact
+        val = rx.snap => deepGet cell.data, nonReact
+        if not val?
+          return deepGet cell.data, nonReact
+        else val
+      else rx.snap -> cell.data
+
+    window.getData = getData
+
+    contactSpent = bind -> util.sum(_.pluck cell.data.contacts, 'loyalty') + util.sum(_.pluck cell.data.contacts, 'connection')
+    contactPoints = bind -> 3 * getData('attributes')?.charisma ? 0
     freeSkills = bind -> getData('priority.magic.skills')?.quantity ? 0
     freeSkillsCount = rx.array.from bind -> [0...freeSkills.get()]
     magicType = bind -> getData('priority.magic.attribute')?.name
@@ -54,13 +56,14 @@ exports.editCharacter = (initial, submitFn) ->
 
     aptitude = bind ->
       index = _.findIndex getData('qualities.positive')?.qualia ? [], ({name}) -> name == 'Aptitude'
-      return getData('qualities.positive')?.choice[index]
+      if index != -1
+        return getData('qualities.positive')?[index]?.choice
+      return null
     return R.form {
       class: 'form'
       submit: ->
         data = $(@).serializeJSON()
         submitFn data
-        _.defer -> window.router.transitionTo 'profile'
         false
     }, rx.flatten bind -> [
       $personalData initial, bind -> getData('priority.metatype')?.metatype
@@ -72,7 +75,7 @@ exports.editCharacter = (initial, submitFn) ->
             "Attributes "
             R.strong bind ->
               base = util.sum attributeNames.map (attr) -> metatypeStats[getData('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
-              spent = util.sum(_.values curFormData.attributes) - base
+              spent = util.sum(_.values cell.data.attributes) - base
               allowed = getData()?.priority?.attributes?.points
               R.span {class: bind -> if spent > allowed then "red" else ""}, [
                 "("
@@ -137,16 +140,21 @@ exports.editCharacter = (initial, submitFn) ->
                   .filter ([name, skill]) -> not getData('skillGroups')?[skill?.group]
                   .pluck 1
                   .value()
+                points = util.sum(_.pluck skills, 'rating')
+                specialties = skills.filter(({specialties}) -> specialties?[0]?.length).length
+                free = (getData().freeSkills?.filter(_.identity).length ? 0) *
+                  (getData('priority.magic.skills')?.rating ? 0)
 
-                util.sum(_.pluck skills, 'rating') +
-                  skills.filter(({specialty}) -> specialty?[0]?.length).length -
-                  freeSkills.get() * getData('priority.magic.skills')?.rating ? 0
-              bind -> " / #{getData('priority.skills')?.skills ?  '??'})"
+                console.info points, specialties, free
+
+                spent = points + specialties - free
+
+                "#{spent} / #{getData('priority.skills')?.skills ?  '??'})"
             ]
             R.h4 rx.flatten [
               "groups: "
               "("
-              bind -> util.sum _.values curFormData.skillGroups
+              bind -> util.sum _.values cell.data.skillGroups
               bind -> " / #{getData('priority.skills')?.groups ? '??'})"
             ]
           ]
@@ -168,7 +176,7 @@ exports.editCharacter = (initial, submitFn) ->
         bind ->
           cap = ((getData('attributes')?.logic ? 0) + (getData('attributes')?.intuition ? 0)) * 2
           skills = _.chain(getData().knowledge).values().flatten().value()
-          total = util.sum(_.pluck skills, 'rating') + skills.filter(({specialty}) -> specialty?[0]?.length).length
+          total = util.sum(_.pluck skills, 'rating') + skills.filter(({specialties}) -> specialties?[0]?.length).length
           return " (#{total} / #{cap})"
       ]
       R.div {class: 'form-horizontal'}, [
@@ -202,8 +210,54 @@ exports.editCharacter = (initial, submitFn) ->
       R.h2 bind ->
         pos = bind -> util.sum _.pluck getData('qualities.positive')?.qualia, 'karma'
         neg = bind -> util.sum _.pluck getData('qualities.negative')?.qualia, 'karma'
+        contactsOver = bind -> Math.max 0, contactSpent.get() - contactPoints.get()
+        R.p "Spend Karma: (#{contactsOver.get()} / #{25 + neg.get() - pos.get()})"
 
-        R.p "Spend Karma: (0/#{25 + neg.get() - pos.get()})"
+      R.div {class: 'row'}, do ->
+        contacts = rx.array Array.from initial?.contacts ? []
+        R.div {class: 'col-md-6'}, rx.flatten [
+          R.h3 bind -> "Contacts: (#{contactSpent.get()} / #{contactPoints.get()} free)"
+          R.small "Max 7 karma per contact"
+          R.div {class: 'row'}, [
+            R.div {class: 'col-sm-8'}, R.label {class: 'control-label'}, "Name"
+            R.div {class: 'col-sm-2'}, R.label {class: 'control-label'}, "Connection"
+            R.div {class: 'col-sm-2'}, R.label {class: 'control-label'}, "Loyalty"
+          ]
+
+          R.div {class: 'form-horizontal'}, contacts.indexed().map (contact, iCell) ->
+            $name = R.input.text {
+              value: contact?.name
+              name: 'contacts[][name]:string',
+              class: 'form-control input-sm'
+            }
+            $connection = R.input.number {
+              value: contact?.connection ? 1
+              min: 1
+              max: bind -> 7 - cell.data.contacts?[iCell.get()]?.loyalty ? 1
+              name: 'contacts[][connection]:number'
+              class: 'form-control input-sm'
+            }
+            $loyalty = R.input.number {
+              value: contact?.loyalty ? 1
+              min: 1
+              max: bind -> 7 - cell.data.contacts?[iCell.get()]?.connection ? 1
+              name: 'contacts[][loyalty]:number'
+              class: 'form-control input-sm'
+            }
+            R.div {class: 'form-group'}, [
+              R.div {class: 'col-sm-8'}, R.span {class: 'input-group'}, [
+                R.span {class: 'input-group-btn'}, R.button {
+                  type: 'button', class: 'btn btn-danger btn-sm'
+                  click: -> contacts.removeAt iCell.raw()
+                }, R.span {class: 'glyphicon glyphicon-remove'}
+                $name
+              ]
+              R.div {class: 'col-sm-2'}, $connection
+              R.div {class: 'col-sm-2'}, $loyalty
+            ]
+          R.button {type: 'button', class: 'btn btn-primary btn-sm', click: -> contacts.push {}}, "Add Contact"
+        ]
+
       R.div {class: 'form-group save-row'},
         R.div {class: 'col-xs-12 col-md-offset-3 col-md-6'}, R.p R.button {type: 'Submit', class: 'btn btn-success btn-block'}, R.h5 "Save Character"
     ]

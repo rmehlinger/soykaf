@@ -5,7 +5,7 @@
   "main": "index.js",
   "scripts": {
     "start": "npm run build && npm run minify && node server.js",
-    "start-dev": "npm run watch & npm run live-reload & firebase serve --only hosting",
+    "start-dev": "firebase serve --only hosting & npm run watch & npm run live-reload",
     "mkdirs": "mkdir -p static/scripts && mkdir -p static/css && cp index.html static/index.html",
     "watch": "npm run mkdirs && npm run watch-js & npm run watch-css",
     "watch-js": "watchify src/main.coffee --transform coffeeify --extension=\".coffee\" --verbose --debug -o '$(npm run exorcist)' | npm run exorcist",
@@ -34,29 +34,27 @@
   },
   "homepage": "https://github.com/rmehlinger/soykaf#readme",
   "dependencies": {
-    "bobtail": "^2.0.1",
+    "bobtail": "^2.0.2",
     "bobtail-form": "^0.3.0",
-    "bobtail-storage": "^1.1.1",
     "bootstrap": "^3.3.7",
-    "browserify": "^14.4.0",
     "cherrytree": "^2.4.1",
-    "coffeeify": "^2.0.1",
-    "express": "~4.15.3",
     "firebase": "^4.3.0",
-    "firetail": "^0.2.2",
+    "firetail": "^0.2.3",
     "jquery": "^3.2.1",
     "jquery-serializejson": "^2.8.1",
     "json-stable-stringify": "^1.0.1",
     "lodash.get": "^4.4.2",
-    "node-sass": "^4.5.3",
-    "nodemon": "~1.11.0",
-    "uglify-es": "^3.0.26",
     "underscore": "^1.8.3",
     "underscore.string": "^3.3.4"
   },
   "devDependencies": {
+    "browserify": "^14.4.0",
+    "coffeeify": "^2.0.1",
     "exorcist": "^0.4.0",
     "live-reload": "^1.1.0",
+    "node-sass": "^4.5.3",
+    "nodemon": "~1.11.0",
+    "uglify-es": "^3.0.26",
     "watchify": "^3.9.0"
   }
 }

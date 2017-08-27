@@ -8,7 +8,6 @@ cherrytree = require 'cherrytree'
 {rxt, bind} = rx
 R = rxt.tags
 util = require './util.coffee'
-window.rxStorage = require 'bobtail-storage'
 
 {editCharacter} = require './views/edit-character.coffee'
 
@@ -142,5 +141,4 @@ signOutButton = -> R.button {
   type: 'button',
   class: 'btn btn-link pull-right text-muted',
   click: -> firebase.auth().signOut()
-#        style: {position: 'absolute', bottom: 0}
 }, "Sign Out"

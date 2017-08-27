@@ -15,7 +15,6 @@ R = rxt.tags
 priority = require '../data/priority.js'
 {groups, active, knowledge} = require '../data/skills.js'
 util = require '../util.coffee'
-window.rxStorage = require 'bobtail-storage'
 stringify = require 'json-stable-stringify'
 
 {attributeNames, metatypeStats} = require '../data/character.js'

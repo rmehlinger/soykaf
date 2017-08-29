@@ -190,8 +190,8 @@ exports.viewCharacter = (character) ->
         ]
         R.h3 "Qualities"
         R.div {class: 'row'}, R.div {class: "col-md-12"}, R.table {class: 'table '}, R.tbody do ->
-          pos = _.map qualities?.positive?.qualia, (q, i) -> _.extend {}, q, {choice: qualities?.positive?.choice[i]}
-          neg = _.map qualities?.negative?.qualia, (q, i) -> _.extend {}, q, {choice: qualities?.negative?.choice[i]}
+          pos = _.map qualities?.positive?.qualia, (q, i) -> _.extend {}, q, {choice: qualities?.positive?.choice?[i]}
+          neg = _.map qualities?.negative?.qualia, (q, i) -> _.extend {}, q, {choice: qualities?.negative?.choice?[i]}
           _.zip(pos, neg).map ([p, n]) -> R.tr [
             R.td {style: width: '50%'}, [
               p?.name

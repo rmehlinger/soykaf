@@ -12,7 +12,8 @@ qualities = require '../data/qualities.js'
 inputs = require '../inputs.coffee'
 
 exports.viewCharacter = (character) ->
-  {contacts, personalData, attributes, specialAttributes, priority, skills, qualities} = character
+  {personalData, attributes, specialAttributes, priority, skills, qualities} = character
+  window.contacts = character.contacts
   condPhys = Math.ceil (attributes?.body ? 0) / 2 + 8
   condStun = Math.ceil (attributes?.willpower ? 0) / 2 + 8
   condOverflow = attributes?.body ? 0
@@ -146,45 +147,45 @@ exports.viewCharacter = (character) ->
           R.table {class: 'table text-right'}, R.tbody [
             R.tr [
               R.td "Essence"
-              R.td {class: 'text-left'}, 6
+              R.td {class: 'text-left'}, R.strong essence
               R.td "Composure"
-              R.td (attributes?.charisma ? 0) + attributes?.willpower ? 0
+              R.td R.strong (attributes?.charisma ? 0) + attributes?.willpower ? 0
             ]
             R.tr [
               R.td "Init."
-              R.td {class: 'text-left'}, [
+              R.td {class: 'text-left'}, R.strong [
                 attributes?.intuition ? 0 + attributes?.reaction ? 0
                 " + 1d6"
               ]
               R.td "Judge Intentions"
-              R.td (attributes?.charisma ? 0) * 2 + attributes?.intuition ? 0
+              R.td R.strong (attributes?.charisma ? 0) * 2 + attributes?.intuition ? 0
             ]
             R.tr [
               R.td "Astral Init."
-              R.td {class: 'text-left'}, [
+              R.td {class: 'text-left'}, R.strong [
                 2 * (attributes?.intuition ? 0)
                 " + 2d6"
               ]
               R.td "Memory"
-              R.td (attributes?.logic ? 0) * 2 + attributes?.willpower ? 0
+              R.td R.strong (attributes?.logic ? 0) * 2 + attributes?.willpower ? 0
             ]
             R.tr [
               R.td "Physical Limit"
-              R.td {class: 'text-left'}, (attributes?.strength ? 0) * 2 + attributes?.body ? 0 + attributes?.reaction ? 0
+              R.td {class: 'text-left'}, R.strong (attributes?.strength ? 0) * 2 + attributes?.body ? 0 + attributes?.reaction ? 0
               R.td "Condition: Physical"
-              R.td condPhys
+              R.td R.strong condPhys
             ]
             R.tr [
               R.td "Mental Limit"
-              R.td {class: 'text-left'}, (attributes?.logic ? 0) * 2 + attributes?.intuition ? 0 + attributes?.willpower ? 0
+              R.td {class: 'text-left'}, R.strong (attributes?.logic ? 0) * 2 + attributes?.intuition ? 0 + attributes?.willpower ? 0
               R.td "Condition: Stun"
-              R.td condStun
+              R.td R.strong condStun
             ]
             R.tr [
               R.td "Social Limit"
-              R.td {class: 'text-left'}, (attributes?.charisma ? 0) * 2 + attributes?.willpower + essence
+              R.td {class: 'text-left'}, R.strong (attributes?.charisma ? 0) * 2 + attributes?.willpower + essence
               R.td "Condition: Overflow"
-              R.td condOverflow
+              R.td R.strong condOverflow
             ]
           ]
         ]
@@ -203,18 +204,20 @@ exports.viewCharacter = (character) ->
             ]
           ]
         R.h3 "Contacts"
-        R.table {class: 'table'}, [
-          R.thead R.tr [
-            R.th "Name"
-            R.th "Loyalty"
-            R.th "Connection"
+        R.table {class: 'table'}, do ->
+          console.info contacts
+          [
+            R.thead R.tr [
+              R.th "Name"
+              R.th "Loyalty"
+              R.th "Connection"
+            ]
+            R.tbody contacts?.map ({name, loyalty, connection}) -> R.tr [
+              R.td name
+              R.td loyalty
+              R.td connection
+            ]
           ]
-          R.tbody contacts?.map ({name, loyalty, connection}) -> R.tr [
-            R.td name
-            R.td loyalty
-            R.td connection
-          ]
-        ]
       ]
       R.div {class: 'col-md-6'}, [
         R.div {class: 'row'}, [
@@ -264,7 +267,10 @@ exports.viewCharacter = (character) ->
                     " "
                     skill.attribute.slice(0, 3).toUpperCase()
                   ]
-                  R.td {style: width: 1, whiteSpace: 'nowrap'}, "= #{attr + skill.rating}"
+                  R.td {style: width: 1, whiteSpace: 'nowrap'}, [
+                    "= "
+                    R.strong "#{attr + skill.rating}"
+                  ]
                   R.td skill.specialties?.join ', '
                 ]
         ]

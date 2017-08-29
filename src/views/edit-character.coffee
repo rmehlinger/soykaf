@@ -1,8 +1,3 @@
-#oldWarningFunction = console.warn
-#console.warn = ->
-#    debugger
-#    oldWarningFunction.apply console, arguments
-
 $ = window.$ = window.jQuery = require 'jquery'
 window._ = require 'underscore'
 _str = require 'underscore.string'
@@ -147,8 +142,6 @@ exports.editCharacter = (initial, submitFn) ->
                 free = (getData().freeSkills?.filter(_.identity).length ? 0) *
                   (getData('priority.magic.skills')?.rating ? 0)
 
-                console.info points, specialties, free
-
                 spent = points + specialties - free
 
                 "#{spent} / #{getData('priority.skills')?.skills ?  '??'})"
@@ -216,7 +209,7 @@ exports.editCharacter = (initial, submitFn) ->
         R.p "Spend Karma: (#{contactsOver.get()} / #{25 + neg.get() - pos.get()})"
 
       R.div {class: 'row'}, do ->
-        contacts = rx.array Array.from initial?.contacts ? []
+        contacts = rx.array initial?.contacts ? []
         R.div {class: 'col-md-6'}, rx.flatten [
           R.h3 bind -> "Contacts: (#{contactSpent.get()} / #{contactPoints.get()} free)"
           R.small "Max 7 karma per contact"
@@ -247,17 +240,17 @@ exports.editCharacter = (initial, submitFn) ->
               class: 'form-control input-sm'
             }
             R.div {class: 'form-group'}, [
-              R.div {class: 'col-sm-8'}, R.span {class: 'input-group'}, [
+              R.div {class: 'col-sm-7'}, R.span {class: 'input-group'}, [
                 R.span {class: 'input-group-btn'}, R.button {
                   type: 'button', class: 'btn btn-danger btn-sm'
                   click: -> contacts.removeAt iCell.raw()
                 }, R.span {class: 'glyphicon glyphicon-remove'}
                 $name
               ]
-              R.div {class: 'col-sm-2'}, $connection
-              R.div {class: 'col-sm-2'}, $loyalty
+              R.div {class: 'col-sm-3 text-right'}, $connection
+              R.div {class: 'col-sm-2 text-right'}, $loyalty
             ]
-          R.button {type: 'button', class: 'btn btn-primary btn-sm', click: -> contacts.push {}}, "Add Contact"
+          R.button {type: 'button', class: 'btn btn-primary btn-sm pull-right', click: -> contacts.push {}}, "Add Contact"
         ]
 
       R.div {class: 'form-group save-row'},

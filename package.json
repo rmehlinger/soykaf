@@ -35,11 +35,11 @@
   "homepage": "https://github.com/rmehlinger/soykaf#readme",
   "dependencies": {
     "bobtail": "^2.0.2",
-    "bobtail-form": "^0.3.0",
+    "bobtail-form": "^0.3.1",
     "bootstrap": "^3.3.7",
     "cherrytree": "^2.4.1",
     "firebase": "^4.3.0",
-    "firetail": "^0.2.3",
+    "firetail": "^0.2.4",
     "jquery": "^3.2.1",
     "jquery-serializejson": "^2.8.1",
     "json-stable-stringify": "^1.0.1",

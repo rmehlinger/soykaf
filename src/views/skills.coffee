@@ -1,5 +1,4 @@
 _ = require 'underscore'
-stringify = require 'json-stable-stringify'
 
 rx = require 'bobtail'
 {rxt, bind} = rx
@@ -7,15 +6,9 @@ R = rxt.tags
 
 {active, knowledge} = require '../data/skills.js'
 
-util = require '../util.coffee'
-priority = require '../data/priority.js'
-qualities = require '../data/qualities.js'
 inputs = require '../inputs.coffee'
 
-main = require './edit-character.coffee'
-
-
-$freeSkill = exports.$freeSkill = (i, initial, magicType) -> R.p {class: 'input-group input-group-sm'}, [
+exports.$freeSkill = (cell, i, initial, magicType) -> R.p {class: 'input-group input-group-sm'}, [
   R.span {class: 'input-group-addon'}, 'Free Skill'
   inputs.select {
     class: 'form-control input-sm'
@@ -25,12 +18,12 @@ $freeSkill = exports.$freeSkill = (i, initial, magicType) -> R.p {class: 'input-
     bind -> _.where(active, {type: if magicType.get() == 'magic' then 'magical' else 'resonance'}).map (skill) ->
       inputs.option {value: skill.name, selected: initial?.freeSkills?[i] == skill.name}, skill.name
   ]
-  R.span {class: 'input-group-addon'}, bind -> main.getData('priority.magic.skills')?.rating
+  R.span {class: 'input-group-addon'}, bind -> cell.getData('priority.magic.skills')?.rating
 ]
 
-$skillWidget = exports.$skillWidget = ({name, group, attribute, aptitude, incompetentGroup, initial, groupScore}) ->
+$skillWidget = exports.$skillWidget = ({cell, name, group, attribute, aptitude, incompetentGroup, initial, groupScore}) ->
   groupScore ?= bind -> null
-  min = bind -> if name in (main.getData()?.freeSkills ? []) then main.getData('priority.magic.skills')?.rating else 0
+  min = bind -> if name in (cell.getData()?.freeSkills ? []) then cell.getData('priority.magic.skills')?.rating else 0
   max = bind -> if aptitude.get() == name then 7 else 6
   $input = R.input.number {
     name: "skills[#{name}][rating]:number"
@@ -71,7 +64,7 @@ $skillWidget = exports.$skillWidget = ({name, group, attribute, aptitude, incomp
   ]
 
 
-$skillGroup = exports.$skillGroup = ({group, incompetentGroup, initial, aptitude, magicType}) ->
+exports.$skillGroup = ({cell, group, incompetentGroup, initial, aptitude, magicType}) ->
   skills = _.where(active, {group: group.name})
   mkgrp = -> R.div {class: 'col-lg-6 col-xs-12', style: {clear: 'right'}}, _.flatten [
     R.h4 {class: 'form-group'}, [
@@ -86,12 +79,13 @@ $skillGroup = exports.$skillGroup = ({group, incompetentGroup, initial, aptitude
         readonly: bind -> incompetentGroup.get() == group.name
       }
     ]
-    skills.map (skill) ->
+    skills?.map (skill) ->
       $skillWidget _.extend {
+        cell,
         initial,
         aptitude,
         incompetentGroup,
-        groupScore: bind -> main.getData('skillGroups')?[skill.group]
+        groupScore: bind -> cell.getData('skillGroups')?[skill.group]
       }, skill
   ]
   bind ->
@@ -104,20 +98,20 @@ $skillGroup = exports.$skillGroup = ({group, incompetentGroup, initial, aptitude
     else null
 
 
-$skillsByType = exports.$skillsByType = ({type, skills, magicType, aptitude, initial}) -> bind ->
+exports.$skillsByType = ({cell, type, skills, magicType, aptitude, initial}) -> bind ->
   R.div {class: 'col-lg-6 col-xs-12'}, bind ->
     if type != 'resonance' and (type != 'magical' or magicType.get() == 'magic') then [
       R.h4 "(#{type})"
       rx.flatten(skills).map (skill) ->
         bind ->
           if not skill.group?
-            $skillWidget _.extend {aptitude, initial}, skill
+            $skillWidget _.extend {cell, aptitude, initial}, skill
           else null
     ]
     else null
 
 
-$mkKnowledgeGrp = exports.$mkKnowledgeGrp = (category, initial) ->
+exports.$mkKnowledgeGrp = (category, initial) ->
   rows = rx.array(initial?.knowledge?[category] ? [])
   R.div rx.flatten [
     R.h3 category

@@ -1,6 +1,4 @@
-$ = require 'jquery'
 _ = require 'underscore'
-stringify = require 'json-stable-stringify'
 _str = require 'underscore.string'
 
 rx = require 'bobtail'
@@ -11,16 +9,13 @@ R = rxt.tags
 {groups, active} = require '../data/skills.js'
 
 util = require '../util.coffee'
-priority = require '../data/priority.js'
 qualities = require '../data/qualities.js'
 inputs = require '../inputs.coffee'
 
-main = require './edit-character.coffee'
-
-exports.default = $qualityPicker = (initial, qualType) ->
+exports.default = (data, initial, qualType) ->
   initQuals = initial?.qualities?[qualType]
   rows = rx.array _.map initQuals?.qualia, (skill, i) -> _.extend {choice: initQuals?.choice?[i]}, skill
-  selected = rx.array.from bind -> Array.from main.getData("qualities.#{qualType}")?.qualia ? []
+  selected = rx.array.from bind -> Array.from data.getData("qualities.#{qualType}")?.qualia ? []
   selectedNames = bind -> _.pluck selected.all(), 'name'
 
   nameStem = "qualities[#{qualType}]"
@@ -38,7 +33,7 @@ exports.default = $qualityPicker = (initial, qualType) ->
       otherNames = bind -> selectedNames.get().filter (e, i) -> i != iCell.get()
       $select = inputs.select {class: 'form-control input-sm', name: "#{nameStem}[qualia][]:object"},
         rx.flatten bind -> [
-          qualities[qualType].map (qual) -> bind ->
+          qualities[qualType]?.map (qual) -> bind ->
             disable = bind -> qual.name in otherNames.get()
             return [
               if qual.multiple then [1..qual.multiple].map (mult) ->

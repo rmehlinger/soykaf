@@ -1,21 +1,17 @@
 $ = window.$ = window.jQuery = require 'jquery'
 window._ = require 'underscore'
-_str = require 'underscore.string'
 window.rx = require 'bobtail'
 require 'jquery-serializejson'
 bobtailForm = require('bobtail-form').default
 
 {rxt, bind} = rx
 R = rxt.tags
-priority = require '../data/priority.js'
-{groups, active, knowledge} = require '../data/skills.js'
+{groups, active} = require '../data/skills.js'
 util = require '../util.coffee'
-stringify = require 'json-stable-stringify'
 
 {attributeNames, metatypeStats} = require '../data/character.js'
 qualities = require '../data/qualities.js'
-deepGet = require 'lodash.get'
-inputs = require '../inputs.coffee'
+window.deepGet = require 'lodash.get'
 
 $priorityTable = require('./priorityTable.coffee').default
 $qualityPicker = require('./qualityPicker.coffee').default
@@ -26,34 +22,32 @@ $personalData = require('./personalData.coffee').default
 
 exports.editCharacter = (initial, submitFn) ->
   {$form} = bobtailForm (cell) ->
-    exports.getData = getData = (nonReact) ->
+    cell.getData = (nonReact) ->
       if nonReact
-        val = rx.snap => deepGet cell.data, nonReact
+        val = this.snapGet(nonReact)
         if not val?
-          return deepGet cell.data, nonReact
+          return deepGet this.data, nonReact
         else val
-      else rx.snap -> cell.data
-
-    window.getData = getData
-
+      else rx.snap => this.data
     contactSpent = bind -> util.sum(_.pluck cell.data.contacts, 'loyalty') + util.sum(_.pluck cell.data.contacts, 'connection')
-    contactPoints = bind -> 3 * getData('attributes')?.charisma ? 0
-    freeSkills = bind -> getData('priority.magic.skills')?.quantity ? 0
+    contactPoints = bind -> 3 * cell.getData('attributes')?.charisma ? 0
+    freeSkills = bind -> cell.getData('priority.magic.skills')?.quantity ? 0
     freeSkillsCount = rx.array.from bind -> [0...freeSkills.get()]
-    magicType = bind -> getData('priority.magic.attribute')?.name
+    magicType = bind -> cell.getData('priority.magic.attribute')?.name
     incompetentGroup = bind ->
-      index = _.findIndex(getData('qualities.negative')?.qualia, {name: 'Incompetent'})
-      if index != -1 then getData('qualities.negative')?.choice?[index]
+      index = _.findIndex(cell.getData('qualities.negative')?.qualia, {name: 'Incompetent'})
+      if index != -1 then cell.getData('qualities.negative')?.choice?[index]
       else null
     rx.autoSub incompetentGroup.onSet, ([o, n]) ->
       $("input[group='#{o}']").val(0).change()
       $("input[group='#{n}']").val(null).change()
 
     aptitude = bind ->
-      index = _.findIndex getData('qualities.positive')?.qualia ? [], ({name}) -> name == 'Aptitude'
+      index = _.findIndex cell.getData('qualities.positive')?.qualia ? [], (qual) -> qual?.name == 'Aptitude'
       if index != -1
-        return getData('qualities.positive')?[index]?.choice
+        return util.logReturn cell.getData('qualities.positive.choice')?[index]
       return null
+
     return R.form {
       class: 'form'
       submit: (event) ->
@@ -63,17 +57,17 @@ exports.editCharacter = (initial, submitFn) ->
         submitFn formData
         false
     }, rx.flatten bind -> [
-      $personalData initial, bind -> getData('priority.metatype')?.metatype
+      $personalData initial, bind -> cell.getData('priority.metatype')?.metatype
       R.h2 "Priority Table"
-      R.div {class: 'row'}, R.div {class: 'col-xs-12'}, $priorityTable initial
+      R.div {class: 'row'}, R.div {class: 'col-xs-12'}, $priorityTable cell, initial
       R.div {class: 'row'}, [
         R.div {class: 'col-md-6'}, [
           R.h2 rx.flatten [
             "Attributes "
             R.strong bind ->
-              base = util.sum attributeNames.map (attr) -> metatypeStats[getData('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
+              base = util.sum attributeNames?.map (attr) -> metatypeStats[cell.getData('priority.metatype')?.metatype]?.attributes?[attr]?.base ? 1
               spent = util.sum(_.values cell.data.attributes) - base
-              allowed = getData()?.priority?.attributes?.points
+              allowed = cell.getData('priority.attributes')?.points
               R.span {class: bind -> if spent > allowed then "red" else ""}, [
                 "("
                 spent
@@ -83,26 +77,26 @@ exports.editCharacter = (initial, submitFn) ->
               ]
           ]
           R.p {class: 'row'}, [
-            $attrInput initial, "body"
-            $attrInput initial, "agility"
-            $attrInput initial, "reaction"
-            $attrInput initial, "strength"
+            $attrInput cell, initial, "body"
+            $attrInput cell, initial, "agility"
+            $attrInput cell, initial, "reaction"
+            $attrInput cell, initial, "strength"
           ]
           R.p {class: 'row'}, [
-            $attrInput initial, "willpower"
-            $attrInput initial, "logic"
-            $attrInput initial, "intuition"
-            $attrInput initial, "charisma"
+            $attrInput cell, initial, "willpower"
+            $attrInput cell, initial, "logic"
+            $attrInput cell, initial, "intuition"
+            $attrInput cell, initial, "charisma"
           ]
         ]
         R.div {class: 'col-md-6'}, [
           R.h2 rx.flatten [
             "Special Attributes "
             R.strong bind ->
-              base = 1 + (getData('priority.magic.attribute')?.value ? 0)
-              if getData('priority.metatype')?.metatype == 'human' then base += 1
-              spent = -base + util.sum _.values getData().specialAttributes
-              allowed = getData('priority.metatype')?.special
+              base = 1 + (cell.getData('priority.magic.attribute')?.value ? 0)
+              if cell.getData('priority.metatype')?.metatype == 'human' then base += 1
+              spent = -base + util.sum _.values cell.data.specialAttributes
+              allowed = cell.getData('priority.metatype')?.special
               R.span {class: bind -> if spent > allowed then "red" else ""}, [
                 "("
                 spent
@@ -112,16 +106,16 @@ exports.editCharacter = (initial, submitFn) ->
               ]
           ]
           R.div {class: 'row'}, [
-            $attrInput initial, "edge", "specialAttributes"
-            $magicAttrInput initial, "magic"
-            $magicAttrInput initial, "resonance"
+            $attrInput cell, initial, "edge", "specialAttributes"
+            $magicAttrInput cell, initial, "magic"
+            $magicAttrInput cell, initial, "resonance"
           ]
         ]
       ]
       R.h2 "Qualities"
       R.div {class: 'row'}, [
-        R.div {class: 'col-xs-6'}, $qualityPicker initial, 'positive'
-        R.div {class: 'col-xs-6'}, $qualityPicker initial, 'negative'
+        R.div {class: 'col-xs-6'}, $qualityPicker cell, initial, 'positive'
+        R.div {class: 'col-xs-6'}, $qualityPicker cell, initial, 'negative'
       ]
       R.div {class: 'form-horizontal'}, rx.flatten [
         R.h2 "Active Skills"
@@ -132,31 +126,31 @@ exports.editCharacter = (initial, submitFn) ->
               "("
               bind ->
                 skills = _
-                  .chain getData()?.skills
+                  .chain cell.getData()?.skills
                   .pairs()
-                  .filter ([name, skill]) -> not getData('skillGroups')?[skill?.group]
+                  .filter ([name, skill]) -> not cell.getData(['skillGroups', skill])?.group
                   .pluck 1
                   .value()
                 points = util.sum(_.pluck skills, 'rating')
                 specialties = skills.filter(({specialties}) -> specialties?[0]?.length).length
-                free = (getData().freeSkills?.filter(_.identity).length ? 0) *
-                  (getData('priority.magic.skills')?.rating ? 0)
+                free = (cell.getData()?.freeSkills?.filter(_.identity).length ? 0) *
+                  (cell.getData('priority.magic.skills')?.rating ? 0)
 
                 spent = points + specialties - free
 
-                "#{spent} / #{getData('priority.skills')?.skills ?  '??'})"
+                "#{spent} / #{cell.getData('priority.skills')?.skills ?  '??'})"
             ]
             R.h4 rx.flatten [
               "groups: "
               "("
-              bind -> util.sum _.values cell.data.skillGroups
-              bind -> " / #{getData('priority.skills')?.groups ? '??'})"
+              bind -> util.sum _.values cell.getData()?.skillGroups
+              bind -> " / #{cell.getData('priority.skills')?.groups ? '??'})"
             ]
           ]
-          R.div {class: 'col-sm-6'}, bind -> freeSkillsCount.map (i) -> $freeSkill i, initial, magicType
+          R.div {class: 'col-sm-6'}, bind -> freeSkillsCount.map (i) -> $freeSkill cell, i, initial, magicType
         ]
         R.div {class: 'row', style: {display: 'flex', 'flex-wrap': 'wrap'}}, do ->
-          rx.flatten groups.map (group) -> $skillGroup {group, incompetentGroup, initial, aptitude, magicType}
+          rx.flatten groups?.map (group) -> $skillGroup {cell, group, incompetentGroup, initial, aptitude, magicType}
         R.h4 "Others"
         R.div {class: 'row'}, rx.flatten (_
           .chain(active)
@@ -164,13 +158,13 @@ exports.editCharacter = (initial, submitFn) ->
           .pairs()
           .sortBy(([type, skills]) -> -skills.length)
           .value()
-        ).map ([type, skills]) -> bind -> $skillsByType {type, skills, magicType, aptitude, initial}
+        ).map ([type, skills]) -> bind -> $skillsByType {cell, type, skills, magicType, aptitude, initial}
       ]
       R.h2 rx.flatten [
         "Knowledge Skills"
         bind ->
-          cap = ((getData('attributes')?.logic ? 0) + (getData('attributes')?.intuition ? 0)) * 2
-          skills = _.chain(getData().knowledge).values().flatten().value()
+          cap = ((cell.getData('attributes')?.logic ? 0) + (cell.getData('attributes')?.intuition ? 0)) * 2
+          skills = _.chain(cell.getData()?.knowledge).values().flatten().value()
           total = util.sum(_.pluck skills, 'rating') + skills.filter(({specialties}) -> specialties?[0]?.length).length
           return " (#{total} / #{cap})"
       ]
@@ -187,7 +181,7 @@ exports.editCharacter = (initial, submitFn) ->
           R.div {class: 'col-md-6'}, $mkKnowledgeGrp 'language', initial
           R.div {class: 'col-md-6'}, rx.flatten [
             R.h3 "native language(s)"
-            bind -> [0..if _.findWhere(getData()?.qualities, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
+            bind -> [0..if _.findWhere(cell.getData('qualities.positive')?.qualia, {name: 'Bilingual'}) then 1 else 0].map -> R.div {class: 'form-group'}, [
               R.div {class: 'col-xs-4'}, R.input.text {
                 placeholder: "native language"
                 name: "nativeLang[][name]:string"
@@ -203,8 +197,8 @@ exports.editCharacter = (initial, submitFn) ->
         ]
       ]
       R.h2 bind ->
-        pos = bind -> util.sum _.pluck getData('qualities.positive')?.qualia, 'karma'
-        neg = bind -> util.sum _.pluck getData('qualities.negative')?.qualia, 'karma'
+        pos = bind -> util.sum _.pluck cell.getData('qualities.positive')?.qualia, 'karma'
+        neg = bind -> util.sum _.pluck cell.getData('qualities.negative')?.qualia, 'karma'
         contactsOver = bind -> Math.max 0, contactSpent.get() - contactPoints.get()
         R.p "Spend Karma: (#{contactsOver.get()} / #{25 + neg.get() - pos.get()})"
 

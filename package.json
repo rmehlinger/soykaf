@@ -34,8 +34,9 @@
   },
   "homepage": "https://github.com/rmehlinger/soykaf#readme",
   "dependencies": {
-    "bobtail": "^2.0.2",
-    "bobtail-form": "^0.3.1",
+    "bobtail": "2.3.0-beta-0",
+    "bobtail-form": "^0.4.0",
+    "bobtail-json-cell": "^0.3.1",
     "bootstrap": "^3.3.7",
     "cherrytree": "^2.4.1",
     "firebase": "^4.3.0",

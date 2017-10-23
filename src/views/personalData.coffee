@@ -15,9 +15,6 @@ priority = require '../data/priority.js'
 qualities = require '../data/qualities.js'
 inputs = require '../inputs.coffee'
 
-main = require './edit-character.coffee'
-
-
 exports.default = (initial, metatype) -> R.div [
   R.h2 "Personal Data"
   R.div {class: 'row'}, [

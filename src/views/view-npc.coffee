@@ -3,15 +3,12 @@ _str = require 'underscore.string'
 window.rx = require 'bobtail'
 require 'jquery-serializejson'
 
-{rxt, bind} = rx
+{rxt} = rx
 R = rxt.tags
-util = require '../util.coffee'
-stringify = require 'json-stable-stringify'
 
 qualities = require '../data/qualities.js'
-inputs = require '../inputs.coffee'
 
-exports.viewCharacter = (character) ->
+exports.viewNPC = (character) ->
   {personalData, attributes, specialAttributes, priority, skills, qualities} = character
   window.contacts = character.contacts
   condPhys = Math.ceil (attributes?.body ? 0) / 2 + 8
@@ -22,7 +19,7 @@ exports.viewCharacter = (character) ->
     R.h3  {class: 'row'}, [
       R.div {class: 'col-xs-6 col-md-3'}, "Personal Information"
       R.div {class: 'col-xs-6 col-md-3'}, R.a {
-        href: router.generate "edit-character"
+        href: router.generate "edit-npc"
         class: 'btn btn-success btn-block btn-sm hidden-print'
         title: 'Edit Character'
       }, [

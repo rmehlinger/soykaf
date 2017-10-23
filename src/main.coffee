@@ -11,6 +11,8 @@ util = require './util.coffee'
 
 {editCharacter} = require './views/edit-character.coffee'
 {viewCharacter} = require './views/view-character.coffee'
+{editNPC} = require './views/edit-npc.coffee'
+{viewNPC} = require './views/view-npc.coffee'
 
 firebase.initializeApp {
   apiKey: "AIzaSyBESCY7XqXljS0Kggi3hGYx0AZZDdTZOUI",
@@ -38,8 +40,11 @@ router.map (route) =>
   route 'home', {path: '/'}
   route 'profile'
   route 'character', {path: '/characters/:charId'}, () =>
-    route 'edit'
+    route 'edit-character', {path: 'edit'}
+  route 'npc', {path: '/npcs/:charId'}, () =>
+    route 'edit-npc', {path: 'edit'}
   route 'new-character'
+  route 'new-npc'
 
 router.use (transition) => rx.transaction =>
   transition.prev.routes.forEach (route) -> curRoutes.delete(route)
@@ -53,6 +58,20 @@ signOutButton = -> R.button {
   class: 'btn btn-default btn-sm pull-right text-muted',
   click: -> firebase.auth().signOut()
 }, "Sign Out"
+
+$shortList = (stem, dataList) -> R.ul {class: 'list-group'}, bind -> _.zip(rx.snap(-> dataList.keys()), dataList.data).map ([charId, char]) ->
+  if charId and char then R.a {href: router.generate stem, {charId}}, R.li {class: 'list-group-item'}, [
+    char.primaryName
+    R.button {
+      type: 'button',
+      class: 'btn btn-xs btn-danger pull-right'
+      click: ->
+        if confirm "Are you sure you would like to delete #{char.primaryName}?"
+          db.ref("characters/#{curUser.raw().uid}/#{charId}").remove => db.ref("#{stem}s-short/#{curUser.raw().uid}/#{charId}").remove()
+        return false
+    }, R.small {class: 'glyphicon glyphicon-remove', style: marginTop: 3}
+  ]
+  else ''
 
 $('body').append R.div rx.flatten [
   R.div {class: 'jumbotron'}, R.div {class: 'container'}, bind -> [
@@ -78,48 +97,65 @@ $('body').append R.div rx.flatten [
         user = curUser.get()
         uid = user.uid
         depCharsShort = rx.hideMutationWarnings -> new DepSyncArray db.ref "characters-short/#{uid}"
+        depNPCsShort = rx.hideMutationWarnings -> new DepSyncArray db.ref "npcs-short/#{uid}"
         curCharacter = rx.hideMutationWarnings -> new DepFireTailCell -> db.ref "characters/#{uid}/#{curParams.get 'charId'}"
+        curNPC = rx.hideMutationWarnings -> new DepFireTailCell -> db.ref "npcs/#{uid}/#{curParams.get 'charId'}"
+        bind -> console.info curNPC.data, curParams.get 'charId'
         return [
           switch curRoutesList.at(0)?.name
             when 'home' then bind ->
               _.defer -> router.replaceWith 'profile'
               "redirecting..."
             when 'profile' then R.div bind -> [
-              R.div {class: 'row'}, R.div {class: 'col-lg-6 col-md-12'}, [
-                R.h2 "Characters"
-                R.ul {class: 'list-group'}, bind -> _.zip(rx.snap(-> depCharsShort.keys()), depCharsShort.data).map ([charId, char]) ->
-                  if charId and char then R.a {href: router.generate 'character', {charId}}, R.li {class: 'list-group-item'}, [
-                    char.primaryName
-                    R.button {
-                      type: 'button',
-                      class: 'btn btn-xs btn-danger pull-right'
-                      click: ->
-                        if confirm "Are you sure you would like to delete #{char.primaryName}?"
-                          db.ref("characters/#{curUser.raw().uid}/#{charId}").remove => db.ref("characters-short/#{curUser.raw().uid}/#{charId}").remove()
-                        return false
-                    }, R.small {class: 'glyphicon glyphicon-remove', style: marginTop: 3}
-                  ]
-                  else ''
+              R.div {class: 'row'}, [
+                R.div {class: 'col-sm-6'}, [
+                  R.h2 "Characters"
+                  $shortList 'character', depCharsShort
+                  R.a {
+                    type: 'button'
+                    class: "btn btn-success"
+                    href: "/new-character"
+                  }, "New Character"
+                ]
+                R.div {class: 'col-sm-6'}, [
+                  R.h2 "NPCs"
+                  $shortList 'npc', depNPCsShort
+                  R.a {
+                    type: 'button'
+                    class: "btn btn-success"
+                    href: "/new-npc"
+                  }, "New NPC"
+                ]
               ]
-              R.a {
-                type: 'button'
-                class: "btn btn-success"
-                href: "/new-character"
-              }, "New Character"
             ]
             when 'new-character' then R.div {class: "row"}, R.div {class: 'col-xs-12'}, editCharacter {}, (data) ->
               ref = db.ref("characters/#{uid}").push()
               ref.set data
-              db.ref("characters-short/#{uid}/#{ref.key}").set {primaryName: data.personalData.primaryName}
+              db.ref("characters-short/#{uid}/#{ref.key}").set {primaryName: data.name}
               _.defer -> window.router.transitionTo 'character', {charId: ref.key}
+            when 'new-npc' then R.div {class: "row"}, R.div {class: 'col-xs-12'}, editNPC {}, (data) ->
+              ref = db.ref("npcs/#{uid}").push()
+              ref.set data
+              console.info data.personalData
+              db.ref("npcs-short/#{uid}/#{ref.key}").set {primaryName: data.personalData.primaryName}
+              _.defer -> window.router.transitionTo 'npc', {charId: ref.key}
             when 'character'
               if curCharacter.data then R.div {class: "row"}, R.div {class: 'col-xs-12'},
-                if curRoutesList.at(1)?.name == 'edit' then editCharacter rx.snap(-> curCharacter.data), (data) ->
+                if curRoutesList.at(1)?.name == 'edit-character' then editCharacter rx.snap(-> curCharacter.data), (data) ->
                   curCharacter.refCell.raw().set(data)
                   db.ref("characters-short/#{uid}/#{curParams.get 'charId'}").set {primaryName: data.personalData.primaryName}
                   _.defer -> window.router.transitionTo 'character', {charId: curParams.get 'charId'}
                 else viewCharacter curCharacter.data
               else 'loading...'
+            when 'npc'
+              if curNPC.data then R.div {class: "row"}, R.div {class: 'col-xs-12'},
+                if curRoutesList.at(1)?.name == 'edit-npc' then editNpc rx.snap(-> curNPC.data), (data) ->
+                  curNPC.refCell.raw().set(data)
+                  db.ref("npcs-short/#{uid}/#{curParams.get 'charId'}").set {primaryName: data.personalData.primaryName}
+                  _.defer -> window.router.transitionTo 'npc', {charId: curParams.get 'charId'}
+                else viewNPC curNPC.data
+                
+
             else R.h1 "WHAT"
         ]
     R.hr()

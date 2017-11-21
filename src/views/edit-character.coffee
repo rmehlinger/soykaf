@@ -61,9 +61,11 @@ exports.editCharacter = (initial, submitFn) ->
       return null
     return R.form {
       class: 'form'
-      submit: ->
-        data = $(@).serializeJSON()
-        submitFn data
+      submit: (event) ->
+        event.preventDefault()
+        event.stopPropagation()
+        formData = $(@).serializeJSON()
+        submitFn formData
         false
     }, rx.flatten bind -> [
       $personalData initial, bind -> getData('priority.metatype')?.metatype

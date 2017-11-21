@@ -19,7 +19,7 @@
     "copy-bootstrap-all": "npm run copy-darkly && npm run copy-bootstrap && npm run copy-fonts",
     "copy-bootstrap": "cp node_modules/bootstrap/dist/css/bootstrap.css static/css",
     "copy-fonts": "cp -ra node_modules/bootstrap/dist/fonts static/fonts",
-    "copy-darkly": "wget https://bootswatch.com/slate/bootstrap.min.css -O static/css/slate-theme.css",
+    "copy-darkly": "wget https://bootswatch.com/3/slate/bootstrap.min.css -O static/css/slate-theme.css",
     "copy-css": "cp -ra css/*.css static/css",
     "live-reload": "live-reload static/**/* --port 9092"
   },
